@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chọn Ghế – 3T Cinema</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #07060e; --surface: #110f1e; --surface2: #1a1830;
+      --gold: #f0c040; --gold-dim: #a8862a; --red: #e84545;
+      --green: #2ecc71; --text: #f0edf7; --muted: #7c7a90;
+      --border: rgba(240,192,64,0.15);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text);
+      min-height: 100vh; overflow-x: hidden; opacity: 0; transition: opacity .4s ease;
+    }
+    body.loaded { opacity: 1; }
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 20% 0%, rgba(240,192,64,0.07) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 30% at 80% 100%, rgba(232,69,69,0.06) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+    .navbar {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 48px; background: rgba(7,6,14,0.85); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .logo { font-family: 'Bebas Neue', cursive; font-size: 2rem; letter-spacing: 3px; color: var(--gold); display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo span { color: var(--text); opacity: .7; }
+    .navbar-right { display: flex; align-items: center; gap: 14px; }
+    .nav-user-badge { font-size: .75rem; color: var(--gold); letter-spacing: 1px; display: flex; align-items: center; gap: 6px; background: rgba(240,192,64,0.08); border: 1px solid rgba(240,192,64,0.2); padding: 6px 14px; border-radius: 20px; }
+    .btn-back { display: flex; align-items: center; gap: 8px; background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 8px 18px; border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: .8rem; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all .25s; text-decoration: none; }
+    .btn-back:hover { border-color: var(--gold); color: var(--gold); }
+
+    .booking-header { position: relative; z-index: 1; padding: 32px 48px 24px; border-bottom: 1px solid var(--border); }
+    .booking-breadcrumb { display: flex; align-items: center; gap: 8px; font-size: .72rem; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+    .booking-breadcrumb .sep { opacity: .4; }
+    .booking-breadcrumb .active { color: var(--gold); }
+    .booking-info-row { display: flex; align-items: flex-end; gap: 32px; flex-wrap: wrap; }
+    .booking-movie-name { font-family: 'Bebas Neue', cursive; font-size: 2.4rem; letter-spacing: 3px; color: var(--text); line-height: 1; }
+    .booking-meta-chips { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .meta-chip { display: inline-flex; align-items: center; gap: 5px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 5px 12px; font-size: .76rem; color: var(--muted); }
+    .meta-chip strong { color: var(--text); }
+    .meta-chip.highlight { border-color: rgba(240,192,64,0.4); color: var(--gold); }
+
+    .step-tabs { display: flex; border-bottom: 1px solid var(--border); background: rgba(17,15,30,0.6); position: sticky; top: 73px; z-index: 90; backdrop-filter: blur(12px); }
+    .step-tab { flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 16px 20px; font-size: .78rem; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: color .25s, border-color .25s; background: transparent; border-top: none; border-left: none; border-right: none; font-family: 'DM Sans', sans-serif; }
+    .step-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+    .step-tab.done { color: var(--green); }
+    .step-tab .step-num { width: 22px; height: 22px; border-radius: 50%; border: 1px solid currentColor; display: flex; align-items: center; justify-content: center; font-size: .7rem; font-weight: 700; }
+    .step-tab.done .step-num { background: var(--green); border-color: var(--green); color: #000; }
+
+    .main-wrap { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 340px; gap: 0; min-height: calc(100vh - 200px); }
+    .step-panel { display: none; }
+    .step-panel.active { display: block; }
+    .seat-area { padding: 32px 48px 120px; }
+    .screen-wrap { display: flex; flex-direction: column; align-items: center; margin-bottom: 40px; }
+    .screen-bar { width: min(600px, 100%); height: 6px; background: linear-gradient(to right, transparent, var(--gold), transparent); border-radius: 3px; margin-bottom: 8px; box-shadow: 0 0 30px rgba(240,192,64,0.4); }
+    .screen-label { font-size: .65rem; letter-spacing: 5px; text-transform: uppercase; color: var(--gold); opacity: .5; }
+    .legend { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 28px; padding: 14px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; justify-content: center; }
+    .legend-item { display: flex; align-items: center; gap: 8px; font-size: .75rem; color: var(--muted); }
+    .legend-seat { width: 18px; height: 18px; border-radius: 4px; flex-shrink: 0; }
+    .ls-available { background: var(--surface2); border: 1px solid rgba(255,255,255,0.15); }
+    .ls-selected  { background: var(--gold); }
+    .ls-booked    { background: #2a2840; border: 1px solid rgba(255,255,255,0.05); }
+    .ls-vip       { background: rgba(232,69,69,0.25); border: 1px solid rgba(232,69,69,0.4); }
+    .ls-couple    { background: rgba(46,204,113,0.2); border: 1px solid rgba(46,204,113,0.35); }
+
+    .seat-grid-container { overflow-x: auto; padding-bottom: 8px; }
+    .seat-grid { display: flex; flex-direction: column; gap: 7px; align-items: center; min-width: fit-content; margin: 0 auto; }
+    .seat-row { display: flex; align-items: center; gap: 5px; }
+    .row-label { width: 22px; text-align: center; font-family: 'Bebas Neue', cursive; font-size: .85rem; color: var(--muted); letter-spacing: 1px; flex-shrink: 0; }
+    .seat { width: 28px; height: 26px; border-radius: 5px 5px 3px 3px; cursor: pointer; transition: all .15s; flex-shrink: 0; border: 1px solid transparent; display: flex; align-items: center; justify-content: center; font-size: .55rem; }
+    .seat.available  { background: var(--surface2); border-color: rgba(255,255,255,0.12); }
+    .seat.available:hover { background: rgba(240,192,64,0.2); border-color: var(--gold); transform: scale(1.15) translateY(-2px); }
+    .seat.selected   { background: var(--gold); border-color: var(--gold); transform: scale(1.08) translateY(-2px); box-shadow: 0 4px 16px rgba(240,192,64,0.4); }
+    .seat.booked     { background: #1c1a2e; border-color: rgba(255,255,255,0.04); cursor: not-allowed; opacity: .5; }
+    .seat.vip-seat.available { background: rgba(232,69,69,0.18); border-color: rgba(232,69,69,0.35); }
+    .seat.vip-seat.available:hover { background: rgba(232,69,69,0.35); border-color: var(--red); }
+    .seat.vip-seat.selected  { background: var(--red); border-color: var(--red); box-shadow: 0 4px 16px rgba(232,69,69,0.4); }
+    .seat.vip-free.available { background: rgba(240,192,64,0.15); border-color: rgba(240,192,64,0.5); }
+    .seat.vip-free.selected  { background: var(--gold); border-color: var(--gold); box-shadow: 0 4px 16px rgba(240,192,64,0.5); }
+    .seat.couple-seat { width: 56px; border-radius: 8px 8px 4px 4px; }
+    .seat.couple-seat.available { background: rgba(46,204,113,0.15); border-color: rgba(46,204,113,0.3); }
+    .seat.couple-seat.available:hover { background: rgba(46,204,113,0.3); border-color: var(--green); }
+    .seat.couple-seat.selected  { background: var(--green); border-color: var(--green); box-shadow: 0 4px 16px rgba(46,204,113,0.4); }
+    .seat-gap { width: 16px; flex-shrink: 0; }
+
+    .food-area { padding: 32px 48px 120px; }
+    .food-header { margin-bottom: 28px; }
+    .food-header h2 { font-family: 'Bebas Neue', cursive; font-size: 2rem; letter-spacing: 3px; margin-bottom: 6px; }
+    .food-header p { color: var(--muted); font-size: .85rem; }
+    .food-category-tabs { display: flex; gap: 8px; margin-bottom: 28px; flex-wrap: wrap; }
+    .cat-tab { background: var(--surface); border: 1px solid var(--border); color: var(--muted); padding: 8px 20px; border-radius: 20px; font-family: 'DM Sans', sans-serif; font-size: .78rem; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all .2s; }
+    .cat-tab:hover { border-color: rgba(240,192,64,0.4); color: var(--text); }
+    .cat-tab.active { background: rgba(240,192,64,0.12); border-color: var(--gold); color: var(--gold); }
+    .food-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+    .food-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; transition: transform .25s, box-shadow .25s, border-color .25s; animation: fadeUp .4s ease both; }
+    .food-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(240,192,64,0.08); border-color: rgba(240,192,64,0.3); }
+    .food-card.has-items { border-color: rgba(240,192,64,0.45); }
+    .food-card.free-gift { border-color: rgba(46,204,113,0.5); background: rgba(46,204,113,0.05); }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+    .food-img-emoji { width: 100%; height: 130px; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; background: var(--surface2); position: relative; }
+    .free-badge-food { position: absolute; top: 8px; right: 8px; background: var(--green); color: #000; font-size: .6rem; font-weight: 700; letter-spacing: 1px; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; }
+    .food-body { padding: 14px; }
+    .food-name { font-size: .9rem; font-weight: 600; margin-bottom: 3px; }
+    .food-desc { font-size: .72rem; color: var(--muted); margin-bottom: 10px; line-height: 1.5; }
+    .food-footer { display: flex; align-items: center; justify-content: space-between; }
+    .food-price { font-family: 'Bebas Neue', cursive; font-size: 1.1rem; letter-spacing: 1px; color: var(--gold); }
+    .food-price.free { color: var(--green); }
+    .qty-control { display: flex; align-items: center; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .qty-btn { width: 30px; height: 30px; background: transparent; border: none; color: var(--text); font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .15s, color .15s; }
+    .qty-btn:hover { background: rgba(240,192,64,0.15); color: var(--gold); }
+    .qty-num { min-width: 28px; text-align: center; font-size: .85rem; font-weight: 600; color: var(--gold); }
+    .food-skip { text-align: center; margin-top: 32px; }
+    .btn-skip { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 10px 28px; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: .78rem; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all .2s; }
+    .btn-skip:hover { border-color: var(--muted); color: var(--text); }
+
+    /* SUMMARY PANEL */
+    .summary-panel { background: var(--surface); border-left: 1px solid var(--border); padding: 32px 28px 120px; position: sticky; top: 115px; height: calc(100vh - 115px); overflow-y: auto; }
+    .summary-panel::-webkit-scrollbar { width: 3px; }
+    .summary-panel::-webkit-scrollbar-thumb { background: var(--gold-dim); }
+    .panel-title { font-family: 'Bebas Neue', cursive; font-size: 1.4rem; letter-spacing: 3px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+    .summary-movie-info { display: flex; gap: 14px; margin-bottom: 24px; padding: 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; }
+    .summary-poster { width: 54px; height: 76px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
+    .summary-movie-name { font-family: 'Bebas Neue', cursive; font-size: 1rem; letter-spacing: 2px; margin-bottom: 6px; }
+    .summary-meta-line { font-size: .72rem; color: var(--muted); margin-bottom: 3px; }
+    .summary-meta-line strong { color: var(--text); }
+    .divider { height: 1px; background: var(--border); margin: 20px 0; }
+    .summary-section-label { font-size: .65rem; letter-spacing: 4px; text-transform: uppercase; color: var(--gold); opacity: .7; margin-bottom: 10px; }
+    .selected-seats-list { display: flex; flex-wrap: wrap; gap: 6px; min-height: 36px; }
+    .seat-tag { background: rgba(240,192,64,0.15); border: 1px solid rgba(240,192,64,0.35); border-radius: 4px; padding: 4px 10px; font-size: .76rem; color: var(--gold); letter-spacing: 1px; animation: popIn .2s ease; }
+    @keyframes popIn { from { transform:scale(0.7); opacity:0; } to { transform:scale(1); opacity:1; } }
+    .no-seats { font-size: .78rem; color: var(--muted); font-style: italic; }
+    .food-summary-list { display: flex; flex-direction: column; gap: 6px; }
+    .food-summary-item { display: flex; justify-content: space-between; align-items: center; font-size: .8rem; }
+    .food-summary-item .fi-name { color: var(--text); }
+    .food-summary-item .fi-price { color: var(--gold-dim); }
+    .food-summary-item .fi-price.free { color: var(--green); }
+    .food-summary-empty { font-size: .78rem; color: var(--muted); font-style: italic; }
+
+    /* DISCOUNT */
+    .discount-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 4px; }
+    .discount-label { font-size: .65rem; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); opacity: .7; margin-bottom: 10px; }
+    .discount-input-row { display: flex; gap: 8px; }
+    .discount-input { flex: 1; background: var(--surface); border: 1px solid rgba(240,192,64,0.2); color: var(--text); padding: 9px 12px; border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: .82rem; letter-spacing: 2px; text-transform: uppercase; outline: none; transition: border-color .2s; }
+    .discount-input:focus { border-color: var(--gold); }
+    .discount-input::placeholder { color: var(--muted); letter-spacing: 1px; text-transform: none; font-size: .75rem; }
+    .btn-apply-code { background: transparent; border: 1px solid rgba(240,192,64,0.4); color: var(--gold); padding: 9px 14px; border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: .75rem; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all .2s; white-space: nowrap; }
+    .btn-apply-code:hover { background: rgba(240,192,64,0.12); border-color: var(--gold); }
+    .discount-feedback { margin-top: 10px; font-size: .76rem; padding: 8px 10px; border-radius: 6px; display: none; line-height: 1.5; }
+    .discount-feedback.success { display: block; background: rgba(46,204,113,0.1); border: 1px solid rgba(46,204,113,0.3); color: var(--green); }
+    .discount-feedback.error   { display: block; background: rgba(232,69,69,0.1); border: 1px solid rgba(232,69,69,0.3); color: var(--red); }
+    .discount-badge-row { display: none; align-items: center; gap: 8px; margin-top: 8px; }
+    .discount-badge-row.show { display: flex; }
+    .code-badge { background: rgba(240,192,64,0.12); border: 1px solid rgba(240,192,64,0.35); color: var(--gold); font-size: .68rem; font-weight: 700; letter-spacing: 2px; padding: 3px 10px; border-radius: 4px; }
+    .code-type-label { font-size: .72rem; color: var(--muted); }
+    .btn-remove-code { background: transparent; border: none; color: var(--muted); font-size: .72rem; cursor: pointer; margin-left: auto; padding: 0; text-decoration: underline; }
+    .btn-remove-code:hover { color: var(--red); }
+    .discount-hints { margin-top: 10px; }
+    .discount-hints-title { font-size: .65rem; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+    .hint-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .hint-chip { background: transparent; border: 1px dashed rgba(240,192,64,0.25); color: var(--muted); font-size: .65rem; letter-spacing: 1.5px; padding: 3px 9px; border-radius: 4px; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all .2s; text-transform: uppercase; }
+    .hint-chip:hover { border-color: var(--gold); color: var(--gold); }
+
+    .price-breakdown { margin-top: 4px; }
+    .price-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; font-size: .82rem; }
+    .price-row .label { color: var(--muted); }
+    .price-row .val   { color: var(--text); }
+    .price-row.discount-row .label { color: var(--green); }
+    .price-row.discount-row .val   { color: var(--green); }
+    .price-total { display: flex; justify-content: space-between; align-items: baseline; padding-top: 12px; border-top: 1px solid var(--border); margin-top: 4px; }
+    .price-total .label { font-size: .78rem; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+    .price-total .amount { font-family: 'Bebas Neue', cursive; font-size: 1.8rem; letter-spacing: 2px; color: var(--gold); }
+    .original-price { font-family: 'Bebas Neue', cursive; font-size: 1rem; letter-spacing: 1px; color: var(--muted); text-decoration: line-through; margin-right: 6px; }
+
+    .btn-next { width: 100%; margin-top: 24px; background: var(--gold); color: #000; border: none; padding: 15px; font-family: 'DM Sans', sans-serif; font-size: .85rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; border-radius: 8px; cursor: pointer; transition: opacity .2s, transform .15s; }
+    .btn-next:hover:not(:disabled) { opacity: .88; transform: scale(1.01); }
+    .btn-next:disabled { opacity: .3; cursor: not-allowed; transform: none; }
+    .btn-confirm { width: 100%; margin-top: 12px; background: transparent; border: 1px solid var(--gold); color: var(--gold); padding: 13px; font-family: 'DM Sans', sans-serif; font-size: .82rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; border-radius: 8px; cursor: pointer; transition: all .2s; display: none; }
+    .btn-confirm:hover:not(:disabled) { background: rgba(240,192,64,0.1); }
+    .seats-counter { text-align: center; margin-top: 12px; font-size: .76rem; color: var(--muted); }
+    .seats-counter strong { color: var(--text); }
+
+    .sticky-cta-mobile { display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; padding: 14px 20px; background: rgba(17,15,30,0.97); backdrop-filter: blur(20px); border-top: 1px solid var(--border); }
+    .mobile-total { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .mobile-total .lbl { font-size: .72rem; color: var(--muted); letter-spacing: 1px; }
+    .mobile-total .amt { font-family: 'Bebas Neue', cursive; font-size: 1.6rem; color: var(--gold); }
+
+    /* ── AUTH MODAL ────────────────────────────────────────────── */
+    .auth-modal-body { text-align: center; }
+    .auth-modal-body .modal-sub { margin-bottom: 28px; }
+    .auth-btn-group { display: flex; flex-direction: column; gap: 10px; }
+    .btn-auth-login { width: 100%; padding: 14px; background: var(--gold); border: none; border-radius: 8px; color: #000; font-family: 'DM Sans', sans-serif; font-size: .85rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: opacity .2s; }
+    .btn-auth-login:hover { opacity: .88; }
+    .btn-auth-register { width: 100%; padding: 13px; background: transparent; border: 1px solid var(--gold); border-radius: 8px; color: var(--gold); font-family: 'DM Sans', sans-serif; font-size: .82rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: all .2s; }
+    .btn-auth-register:hover { background: rgba(240,192,64,0.1); }
+    .btn-auth-skip { width: 100%; padding: 11px; background: transparent; border: 1px solid var(--border); border-radius: 8px; color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: .78rem; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all .2s; }
+    .btn-auth-skip:hover { border-color: var(--muted); color: var(--text); }
+    .auth-lock-icon { font-size: 3.2rem; margin-bottom: 16px; animation: pulseGlow 2s ease-in-out infinite; }
+    @keyframes pulseGlow {
+      0%, 100% { filter: drop-shadow(0 0 0px rgba(240,192,64,0)); }
+      50%       { filter: drop-shadow(0 0 18px rgba(240,192,64,0.6)); }
+    }
+    .auth-perks { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; padding: 14px; background: rgba(240,192,64,0.05); border: 1px solid rgba(240,192,64,0.15); border-radius: 10px; text-align: left; }
+    .auth-perk { font-size: .78rem; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+    .auth-perk span { color: var(--green); }
+
+    /* MODAL */
+    .modal-overlay { display: none; position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,0.75); backdrop-filter: blur(6px); align-items: center; justify-content: center; padding: 20px; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 36px; max-width: 480px; width: 100%; animation: modalIn .35s cubic-bezier(.34,1.56,.64,1); max-height: 90vh; overflow-y: auto; }
+    @keyframes modalIn { from { transform:scale(0.85) translateY(20px); opacity:0; } to { transform:scale(1) translateY(0); opacity:1; } }
+    .modal-icon { font-size: 3rem; text-align: center; margin-bottom: 16px; }
+    .modal-title { font-family: 'Bebas Neue', cursive; font-size: 1.8rem; letter-spacing: 3px; text-align: center; margin-bottom: 8px; }
+    .modal-sub { font-size: .82rem; color: var(--muted); text-align: center; line-height: 1.7; margin-bottom: 24px; }
+    .modal-details { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 24px; }
+    .modal-detail-row { display: flex; justify-content: space-between; font-size: .8rem; margin-bottom: 8px; }
+    .modal-detail-row:last-child { margin-bottom: 0; }
+    .modal-detail-row .k { color: var(--muted); }
+    .modal-detail-row .v { color: var(--text); font-weight: 500; text-align: right; max-width: 260px; }
+    .modal-detail-row .v.gold { color: var(--gold); font-family: 'Bebas Neue', cursive; font-size: 1rem; letter-spacing: 1px; }
+    .modal-detail-row .v.green { color: var(--green); font-weight: 700; }
+    .modal-detail-row .v.strike { text-decoration: line-through; color: var(--muted); font-size: .75rem; }
+    .modal-discount-banner { background: rgba(46,204,113,0.08); border: 1px solid rgba(46,204,113,0.25); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; font-size: .8rem; }
+    .modal-discount-banner .dc-text { color: var(--green); flex: 1; }
+    .modal-actions { display: flex; gap: 12px; }
+    .btn-modal-cancel { flex: 1; padding: 13px; background: transparent; border: 1px solid var(--border); border-radius: 8px; color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: .82rem; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all .2s; }
+    .btn-modal-cancel:hover { border-color: var(--muted); color: var(--text); }
+    .btn-modal-ok { flex: 2; padding: 13px; background: var(--gold); border: none; border-radius: 8px; color: #000; font-family: 'DM Sans', sans-serif; font-size: .85rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: opacity .2s; }
+    .btn-modal-ok:hover { opacity: .88; }
+
+    /* SUCCESS */
+    .success-screen { display: none; position: fixed; inset: 0; z-index: 600; background: var(--bg); flex-direction: column; align-items: center; justify-content: center; padding: 40px; overflow-y: auto; }
+    .success-screen.show { display: flex; animation: fadeIn .5s ease; }
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+    .success-icon { width: 90px; height: 90px; border-radius: 50%; background: rgba(46,204,113,0.15); border: 2px solid var(--green); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin-bottom: 28px; animation: scaleIn .5s .2s cubic-bezier(.34,1.56,.64,1) both; }
+    @keyframes scaleIn { from { transform:scale(0); } to { transform:scale(1); } }
+    .success-title { font-family: 'Bebas Neue', cursive; font-size: 2.8rem; letter-spacing: 4px; color: var(--green); margin-bottom: 12px; text-align: center; }
+    .success-sub { font-size: .9rem; color: var(--muted); margin-bottom: 32px; text-align: center; line-height: 1.7; max-width: 400px; }
+    .success-ticket { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px; width: 100%; max-width: 420px; margin-bottom: 32px; }
+    .ticket-row { display: flex; justify-content: space-between; font-size: .82rem; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed var(--border); }
+    .ticket-row:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+    .ticket-row .k { color: var(--muted); }
+    .ticket-row .v { color: var(--text); font-weight: 500; text-align: right; max-width: 220px; }
+    .success-actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+    .btn-home { background: var(--gold); color: #000; border: none; padding: 14px 48px; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: .85rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: opacity .2s; }
+    .btn-home:hover { opacity: .88; }
+    .btn-view-tickets { background: transparent; border: 1px solid var(--gold); color: var(--gold); padding: 14px 32px; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: .82rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: all .2s; }
+    .btn-view-tickets:hover { background: rgba(240,192,64,0.1); }
+
+    .toast { position: fixed; bottom: 90px; right: 32px; z-index: 700; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 20px; font-size: .85rem; box-shadow: 0 16px 40px rgba(0,0,0,0.4); display: none; align-items: center; gap: 10px; max-width: 300px; }
+    .toast.show { display: flex; animation: toastIn .3s ease; }
+    @keyframes toastIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+
+    @media (max-width: 900px) {
+      .main-wrap { grid-template-columns: 1fr; }
+      .summary-panel { display: none; }
+      .sticky-cta-mobile { display: block; }
+      .navbar { padding: 14px 20px; }
+      .booking-header { padding: 20px 20px 16px; }
+      .seat-area { padding: 24px 16px 160px; }
+      .food-area { padding: 24px 16px 160px; }
+    }
+    @media (max-width: 480px) {
+      .seat { width: 24px; height: 22px; }
+      .seat.couple-seat { width: 48px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- ── BOOKING CONFIRM MODAL ── -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-icon">🎟️</div>
+    <div class="modal-title">Xác Nhận Đặt Vé</div>
+    <div class="modal-sub">Vui lòng kiểm tra thông tin trước khi thanh toán</div>
+    <div id="modalDiscountBanner" class="modal-discount-banner" style="display:none">
+      <span>🏷️</span>
+      <span class="dc-text" id="modalDiscountText"></span>
+    </div>
+    <div class="modal-details" id="modalDetails"></div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeModal()">Huỷ</button>
+      <button class="btn-modal-ok" onclick="confirmBooking()">Xác nhận & Thanh toán →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── AUTH MODAL ── -->
+<div class="modal-overlay" id="authOverlay">
+  <div class="modal" style="max-width:420px">
+    <div class="auth-modal-body">
+      <div class="auth-lock-icon">🔐</div>
+      <div class="modal-title">Yêu Cầu Đăng Nhập</div>
+      <div class="modal-sub">Bạn cần đăng nhập để đặt vé.<br/>Tham gia ngay để nhận ưu đãi thành viên!</div>
+      <div class="auth-perks">
+        <div class="auth-perk"><span>✓</span> Lưu lịch sử vé đã đặt</div>
+        <div class="auth-perk"><span>✓</span> Nhận mã giảm giá độc quyền</div>
+        <div class="auth-perk"><span>✓</span> Tích điểm thành viên mỗi lần đặt vé</div>
+      </div>
+      <div class="auth-btn-group">
+        <button class="btn-auth-login" onclick="goLogin()">🔑 Đăng nhập ngay</button>
+        <button class="btn-auth-register" onclick="goRegister()">✨ Tạo tài khoản mới – Miễn phí</button>
+        <button class="btn-auth-skip" onclick="closeAuthModal()">Tiếp tục xem (không đặt vé)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SUCCESS SCREEN ── -->
+<div class="success-screen" id="successScreen">
+  <div class="success-icon">✓</div>
+  <div class="success-title">Đặt Vé Thành Công!</div>
+  <div class="success-sub" id="successSubText">Vé của bạn đã được xác nhận.<br>Hãy đến rạp trước giờ chiếu 15 phút.</div>
+  <div class="success-ticket" id="successTicket"></div>
+  <div class="success-actions">
+    <button class="btn-home" onclick="goHome()">← Về Trang Chủ</button>
+    <button class="btn-view-tickets" onclick="goHome()">🎟️ Xem vé đã đặt</button>
+  </div>
+</div>
+
+<nav class="navbar">
+  <a class="logo" href="index.html">🎬 Thanh<span>Cinema</span></a>
+  <div class="navbar-right">
+    <div class="nav-user-badge" id="navUserBadge" style="display:none"></div>
+    <a class="btn-back" href="#" onclick="goBack(event)">← Đổi suất chiếu</a>
+  </div>
+</nav>
+
+<div class="booking-header">
+  <div class="booking-breadcrumb">
+    <span>Chọn phim</span><span class="sep">›</span>
+    <span>Chọn suất chiếu</span><span class="sep">›</span>
+    <span class="active" id="breadcrumbStep">Chọn ghế</span><span class="sep">›</span>
+    <span>Thanh toán</span>
+  </div>
+  <div class="booking-info-row">
+    <div class="booking-movie-name" id="headerMovieName">–</div>
+    <div class="booking-meta-chips" id="headerMeta"></div>
+  </div>
+</div>
+
+<div class="step-tabs">
+  <button class="step-tab active" id="tabStep1" onclick="goToStep(1)">
+    <span class="step-num" id="stepNum1">1</span> Chọn ghế
+  </button>
+  <button class="step-tab" id="tabStep2" onclick="goToStep(2)">
+    <span class="step-num" id="stepNum2">2</span> Đặt đồ ăn
+  </button>
+</div>
+
+<div class="main-wrap">
+  <!-- STEP 1 – SEATS -->
+  <div class="step-panel active" id="stepPanel1">
+    <div class="seat-area">
+      <div class="screen-wrap">
+        <div class="screen-bar"></div>
+        <div class="screen-label">Màn hình</div>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-seat ls-available"></div>Còn trống</div>
+        <div class="legend-item"><div class="legend-seat ls-selected"></div>Đang chọn</div>
+        <div class="legend-item"><div class="legend-seat ls-booked"></div>Đã đặt</div>
+        <div class="legend-item"><div class="legend-seat ls-vip"></div>VIP (+50k)</div>
+        <div class="legend-item"><div class="legend-seat ls-couple"></div>Đôi (+80k)</div>
+      </div>
+      <div class="seat-grid-container">
+        <div class="seat-grid" id="seatGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2 – FOOD -->
+  <div class="step-panel" id="stepPanel2">
+    <div class="food-area">
+      <div class="food-header">
+        <h2>🍿 Chọn Đồ Ăn & Nước Uống</h2>
+        <p>Đặt trước để nhận ngay khi đến rạp — không cần xếp hàng!</p>
+      </div>
+      <div class="food-category-tabs">
+        <button class="cat-tab active" onclick="filterFood('all',this)">Tất cả</button>
+        <button class="cat-tab" onclick="filterFood('popcorn',this)">🍿 Bắp rang</button>
+        <button class="cat-tab" onclick="filterFood('drink',this)">🥤 Nước uống</button>
+        <button class="cat-tab" onclick="filterFood('combo',this)">🎁 Combo</button>
+        <button class="cat-tab" onclick="filterFood('snack',this)">🍟 Snack</button>
+      </div>
+      <div class="food-grid" id="foodGrid"></div>
+      <div class="food-skip">
+        <button class="btn-skip" onclick="openModal()">Bỏ qua & Xác nhận đặt vé →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="summary-panel">
+    <div class="panel-title">Tóm Tắt</div>
+    <div class="summary-movie-info">
+      <img id="summaryPoster" src="" alt="" class="summary-poster"/>
+      <div>
+        <div class="summary-movie-name" id="summaryMovieName">–</div>
+        <div class="summary-meta-line" id="summaryRoom"></div>
+        <div class="summary-meta-line" id="summaryTime"></div>
+        <div class="summary-meta-line" id="summaryDate"></div>
+      </div>
+    </div>
+    <div class="summary-section-label">Ghế đã chọn</div>
+    <div class="selected-seats-list" id="selectedSeatsList"><span class="no-seats">Chưa chọn ghế nào</span></div>
+    <div class="divider"></div>
+    <div class="summary-section-label">Đồ ăn & Nước uống</div>
+    <div class="food-summary-list" id="foodSummaryList"><span class="food-summary-empty">Chưa chọn</span></div>
+    <div class="divider"></div>
+    <div class="discount-box">
+      <div class="discount-label">🏷️ Mã giảm giá</div>
+      <div class="discount-input-row">
+        <input class="discount-input" id="discountInput" type="text" placeholder="Nhập mã của bạn..." maxlength="20" oninput="this.value=this.value.toUpperCase()"/>
+        <button class="btn-apply-code" onclick="applyDiscountCode()">Áp dụng</button>
+      </div>
+      <div class="discount-feedback" id="discountFeedback"></div>
+      <div class="discount-badge-row" id="discountBadgeRow">
+        <span class="code-badge" id="activeBadge"></span>
+        <span class="code-type-label" id="activeTypeLabel"></span>
+        <button class="btn-remove-code" onclick="removeDiscountCode()">Xoá</button>
+      </div>
+      <div class="discount-hints">
+        <div class="discount-hints-title">Mã có sẵn:</div>
+        <div class="hint-chips">
+          <button class="hint-chip" onclick="fillCode('WELCOME20')">WELCOME20</button>
+          <button class="hint-chip" onclick="fillCode('MEMBER15')">MEMBER15</button>
+          <button class="hint-chip" onclick="fillCode('VIP25')">VIP25</button>
+        </div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="summary-section-label">Chi tiết giá</div>
+    <div class="price-breakdown" id="priceBreakdown"></div>
+    <div class="price-total">
+      <span class="label">Tổng cộng</span>
+      <span style="display:flex;align-items:baseline;gap:4px">
+        <span class="original-price" id="originalPriceDisplay" style="display:none"></span>
+        <span class="amount" id="totalAmount">0đ</span>
+      </span>
+    </div>
+    <button class="btn-next" id="btnNext" onclick="goToStep(2)" disabled>Tiếp theo: Đặt đồ ăn →</button>
+    <button class="btn-confirm" id="btnConfirm" onclick="openModal()">Xác nhận đặt vé →</button>
+    <div class="seats-counter" id="seatsCounter">Đã chọn <strong id="seatCountNum">0</strong> / tối đa <strong>8</strong> ghế</div>
+  </div>
+</div>
+
+<div class="sticky-cta-mobile" id="mobileCta">
+  <div class="mobile-total">
+    <span class="lbl">Tổng (<span id="mobileCount">0</span> ghế)</span>
+    <span class="amt" id="mobileTotal">0đ</span>
+  </div>
+  <button class="btn-next" id="btnNextMobile" onclick="goToStep(2)" disabled>Tiếp theo: Đặt đồ ăn →</button>
+</div>
+
+<script>
+// ── AUTH ──────────────────────────────────────────────────────────────────
+const SESSION_KEY = 'tc_session';
+
+function isLoggedIn() {
+  try { return !!localStorage.getItem(SESSION_KEY) && !!JSON.parse(localStorage.getItem(SESSION_KEY)); }
+  catch(e) { return false; }
+}
+
+function getCurrentUser() {
+  try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch(e) { return null; }
+}
+
+function openAuthModal() {
+  document.getElementById('authOverlay').classList.add('open');
+}
+
+function closeAuthModal() {
+  document.getElementById('authOverlay').classList.remove('open');
+}
+
+function goLogin() {
+  sessionStorage.setItem('tc_redirect_after_login', location.href);
+  sessionStorage.setItem('tc_open_panel', 'login');
+  window.location.href = 'login.html';
+}
+
+function goRegister() {
+  sessionStorage.setItem('tc_redirect_after_login', location.href);
+  sessionStorage.setItem('tc_open_panel', 'register');
+  window.location.href = 'login.html';
+}
+
+function renderNavUser() {
+  const user = getCurrentUser();
+  const badge = document.getElementById('navUserBadge');
+  if (user) {
+    const name = user.first || user.username || 'Bạn';
+    badge.innerHTML = `👤 <strong>${name}</strong>`;
+    badge.style.display = 'flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// ── MOVIES DATA ───────────────────────────────────────────────────────────
+const MOVIES_DATA = {
+  'Hen Em Ngay Nhat Thuc': {
+    title: 'Hẹn Em Ngày Nhật Thực',
+    image: 'https://iguov8nhvyobj.vcdn.cloud/media/catalog/product/cache/1/image/1800x/71252117777b696995f01934522c402d/1/0/1080wx608h-nhatthuc.jpg',
+  },
+  'Anh Hung': {
+    title: 'Anh Hùng',
+    image: 'https://image.ngaynay.vn/w760/Uploaded/2026/vowkoqic/2026_04_21/z7749926617316-9d9386f718b254749429b96bf2f44d37-1138-5608.jpg',
+  },
+  'THAM MY VIEN AM PHU': {
+    title: 'Thẩm Mỹ Viện Âm Phủ',
+    image: 'https://kenh14cdn.com/203336854389633024/2026/5/6/photo-1-17780636405391605466439-1778076295775-1778076296228773360142.jpg',
+  },
+  'Heo Nam Mong': {
+    title: 'Héo Nắm Mộng',
+    image: 'https://cdn.moveek.com/storage/media/cache/tall/69a14979d4555683148961.jpg',
+  },
+};
+
+// ── PARSE URL PARAMS ──────────────────────────────────────────────────────
+const urlParams      = new URLSearchParams(location.search);
+const movieKey       = urlParams.get('movie')    || 'Hen Em Ngay Nhat Thuc';
+const roomId         = parseInt(urlParams.get('room')     || '1');
+const roomName       = urlParams.get('roomName') || 'Phòng 1';
+const showTime       = urlParams.get('time')     || '08:30';
+const endTime        = urlParams.get('endTime')  || '';
+const basePrice      = parseInt(urlParams.get('price')    || '150000');
+const typeLabel      = urlParams.get('type')     || 'IMAX';
+const dateIndex      = parseInt(urlParams.get('date')     || '0');
+const startMin       = parseInt(urlParams.get('startMin') || '510');
+const availableCount = parseInt(urlParams.get('available') || '100');
+
+const movie = MOVIES_DATA[movieKey] || MOVIES_DATA['Hen Em Ngay Nhat Thuc'];
+
+// ── ROOM CONFIG ───────────────────────────────────────────────────────────
+const ROOM_CONFIGS = {
+  1: { cols: 20, vipRows: [6,7], coupleRow: 9  },
+  2: { cols: 14, vipRows: [4,5], coupleRow: 7  },
+  3: { cols: 15, vipRows: [],    coupleRow: 8  },
+};
+const ROOM_ROWS = { 1: 10, 2: 10, 3: 10 };
+
+const roomCfg  = ROOM_CONFIGS[roomId] || ROOM_CONFIGS[1];
+const roomRows = ROOM_ROWS[roomId]    || 10;
+
+function calcCapacity() {
+  let total = 0;
+  for (let r = 0; r < roomRows; r++) {
+    total += (r === roomCfg.coupleRow) ? Math.floor(roomCfg.cols / 2) : roomCfg.cols;
+  }
+  return total;
+}
+const REAL_CAPACITY = calcCapacity();
+
+// ── CONSTANTS ─────────────────────────────────────────────────────────────
+const MAX_SELECT       = 8;
+const VIP_SURCHARGE    = 50000;
+const COUPLE_SURCHARGE = 80000;
+const TICKETS_KEY      = 'tc_my_tickets';
+
+function AVAIL_KEY()  { return `tc_avail_r${roomId}_d${dateIndex}_${startMin}`; }
+function LAYOUT_KEY() { return `tc_layout_r${roomId}_d${dateIndex}_${startMin}`; }
+
+// ── DISCOUNT CODES ────────────────────────────────────────────────────────
+const DISCOUNT_CODES = {
+  'WELCOME20': { label:'🎉 Khách mới',       description:'Giảm 20% tổng hoá đơn', discountPercent:20, freeCombo:false, vipFree:false },
+  'MEMBER15':  { label:'⭐ Khách tiềm năng', description:'Giảm 15% + tặng 1 Combo Solo', discountPercent:15, freeCombo:true, freeComboId:'combo3', vipFree:false },
+  'VIP25':     { label:'👑 Khách lâu năm',   description:'Giảm 25% + phụ thu VIP miễn phí', discountPercent:25, freeCombo:false, vipFree:true },
+};
+
+// ── FOOD MENU ─────────────────────────────────────────────────────────────
+const FOOD_MENU = [
+  { id:'combo1',   name:'Combo Đôi Lãng Mạn',  desc:'Bắp rang bơ L + 2 nước ngọt L + 1 gói kẹo',      price:139000, category:'combo',   emoji:'💑' },
+  { id:'combo2',   name:'Combo Gia Đình',        desc:'Bắp rang bơ XL + 4 nước ngọt M + 2 gói snack',  price:219000, category:'combo',   emoji:'👨‍👩‍👧‍👦' },
+  { id:'combo3',   name:'Combo Solo',            desc:'Bắp rang bơ M + 1 nước ngọt L',                 price:79000,  category:'combo',   emoji:'🎬' },
+  { id:'pop_m',    name:'Bắp Rang Bơ M',         desc:'Bắp rang bơ vị cổ điển, size vừa',              price:49000,  category:'popcorn', emoji:'🍿' },
+  { id:'pop_l',    name:'Bắp Rang Bơ L',         desc:'Bắp rang bơ vị cổ điển, size lớn',              price:59000,  category:'popcorn', emoji:'🍿' },
+  { id:'pop_cara', name:'Bắp Rang Caramel L',    desc:'Caramel ngọt thơm, size lớn',                   price:65000,  category:'popcorn', emoji:'🍬' },
+  { id:'coke_m',   name:'Coca-Cola M',            desc:'Nước ngọt có ga, 500ml',                        price:29000,  category:'drink',   emoji:'🥤' },
+  { id:'coke_l',   name:'Coca-Cola L',            desc:'Nước ngọt có ga, 700ml',                        price:35000,  category:'drink',   emoji:'🥤' },
+  { id:'water',    name:'Nước Suối',              desc:'Nước khoáng thiên nhiên 500ml',                 price:15000,  category:'drink',   emoji:'🫗' },
+  { id:'milk_tea', name:'Trà Sữa Trân Châu',     desc:'Trà đen, trân châu đường đen',                  price:49000,  category:'drink',   emoji:'🧋' },
+  { id:'hotdog',   name:'Hotdog Phomai',          desc:'Xúc xích nướng, phủ phô mai',                   price:49000,  category:'snack',   emoji:'🌭' },
+  { id:'nachos',   name:'Nachos & Sauce',         desc:'Bánh bắp giòn + sốt cà chua & phomai',          price:55000,  category:'snack',   emoji:'🫔' },
+  { id:'fries',    name:'Khoai Tây Chiên M',      desc:'Khoai tây giòn rụm, muối biển',                 price:39000,  category:'snack',   emoji:'🍟' },
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────
+let seatLayout    = loadOrCreateLayout();
+let selectedSeats = [];
+let foodOrder     = {};
+let currentFoodCat = 'all';
+let currentStep   = 1;
+let activeDiscount = null;
+
+// ── SEAT LAYOUT ───────────────────────────────────────────────────────────
+function loadOrCreateLayout() {
+  try { const saved = localStorage.getItem(LAYOUT_KEY()); if (saved) return JSON.parse(saved); } catch(e) {}
+  return createLayout();
+}
+
+function createLayout() {
+  const bookedNeed = Math.max(0, REAL_CAPACITY - availableCount);
+  function seededRng(seed) {
+    let s = seed + 0x9E3779B9;
+    return () => { s ^= s << 13; s ^= s >> 17; s ^= s << 5; return (s >>> 0) / 4294967296; };
+  }
+  const rng = seededRng(roomId * 10000 + dateIndex * 100 + startMin);
+  const allSeatIds = [];
+  for (let r = 0; r < roomRows; r++) {
+    const isCouple = r === roomCfg.coupleRow;
+    const count    = isCouple ? Math.floor(roomCfg.cols / 2) : roomCfg.cols;
+    const label    = String.fromCharCode(65 + r);
+    for (let c = 1; c <= count; c++) allSeatIds.push(label + c);
+  }
+  const shuffled = [...allSeatIds];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  const bookedSet = new Set(shuffled.slice(0, bookedNeed));
+  const layout = [];
+  for (let r = 0; r < roomRows; r++) {
+    const label    = String.fromCharCode(65 + r);
+    const isVip    = roomCfg.vipRows.includes(r);
+    const isCouple = r === roomCfg.coupleRow;
+    const count    = isCouple ? Math.floor(roomCfg.cols / 2) : roomCfg.cols;
+    layout.push({
+      label, isVip, isCouple,
+      seats: Array.from({ length: count }, (_, c) => {
+        const id = label + (c + 1);
+        return { id, row: label, col: c+1, isVip, isCouple, booked: bookedSet.has(id) };
+      })
+    });
+  }
+  try { localStorage.setItem(LAYOUT_KEY(), JSON.stringify(layout)); } catch(e) {}
+  try { localStorage.setItem(AVAIL_KEY(), String(availableCount)); } catch(e) {}
+  return layout;
+}
+
+function saveLayout() {
+  try { localStorage.setItem(LAYOUT_KEY(), JSON.stringify(seatLayout)); } catch(e) {}
+}
+
+function syncAvailToMovieDetail() {
+  let available = 0;
+  for (const row of seatLayout) for (const seat of row.seats) if (!seat.booked) available++;
+  try { localStorage.setItem(AVAIL_KEY(), String(available)); } catch(e) {}
+  return available;
+}
+
+function getShowDate() {
+  const d = new Date();
+  d.setDate(d.getDate() + dateIndex);
+  return d.toLocaleDateString('vi-VN', { weekday:'long', day:'2-digit', month:'2-digit', year:'numeric' });
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+function init() {
+  document.title = movie.title + ' – Chọn Ghế – 3T Cinema';
+  document.getElementById('headerMovieName').textContent = movie.title;
+  document.getElementById('headerMeta').innerHTML = `
+    <div class="meta-chip highlight">🕐 <strong>${showTime}${endTime ? ' → ' + endTime : ''}</strong></div>
+    <div class="meta-chip">🏠 ${roomName}</div>
+    <div class="meta-chip">🎭 ${typeLabel}</div>
+    <div class="meta-chip">📅 ${getShowDate()}</div>
+    <div class="meta-chip">💰 <strong>${basePrice.toLocaleString('vi-VN')}đ</strong>/ghế</div>`;
+  document.getElementById('summaryPoster').src            = movie.image;
+  document.getElementById('summaryMovieName').textContent = movie.title;
+  document.getElementById('summaryRoom').innerHTML        = `Phòng: <strong>${roomName} · ${typeLabel}</strong>`;
+  document.getElementById('summaryTime').innerHTML        = `Giờ: <strong>${showTime}${endTime ? ' → ' + endTime : ''}</strong>`;
+  document.getElementById('summaryDate').innerHTML        = `Ngày: <strong>${getShowDate()}</strong>`;
+  renderNavUser();
+  renderGrid();
+  renderFoodGrid();
+  updateSummary();
+  document.body.classList.add('loaded');
+}
+
+// ── STEP NAV ──────────────────────────────────────────────────────────────
+function goToStep(step) {
+  if (step === 2 && selectedSeats.length === 0) { showToast('⚠️ Vui lòng chọn ít nhất 1 ghế'); return; }
+  // AUTH GUARD: chặn step 2 trở lên nếu chưa đăng nhập
+  if (step >= 2 && !isLoggedIn()) { openAuthModal(); return; }
+  currentStep = step;
+  document.querySelectorAll('.step-panel').forEach((p, i) => p.classList.toggle('active', i+1 === step));
+  document.getElementById('tabStep1').classList.toggle('active', step === 1);
+  document.getElementById('tabStep2').classList.toggle('active', step === 2);
+  if (step > 1) { document.getElementById('tabStep1').classList.add('done'); document.getElementById('stepNum1').textContent = '✓'; }
+  else          { document.getElementById('tabStep1').classList.remove('done'); document.getElementById('stepNum1').textContent = '1'; }
+  document.getElementById('breadcrumbStep').textContent = step === 1 ? 'Chọn ghế' : 'Đặt đồ ăn';
+  document.getElementById('btnNext').style.display      = step === 1 ? 'block' : 'none';
+  document.getElementById('btnConfirm').style.display   = step === 2 ? 'block' : 'none';
+  const mob = document.getElementById('btnNextMobile');
+  if (step === 1) { mob.textContent = 'Tiếp theo: Đặt đồ ăn →'; mob.onclick = () => goToStep(2); }
+  else            { mob.textContent = 'Xác nhận đặt vé →';       mob.onclick = openModal; }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── SEAT GRID ─────────────────────────────────────────────────────────────
+function renderGrid() {
+  const grid = document.getElementById('seatGrid');
+  grid.innerHTML = '';
+  seatLayout.forEach(row => {
+    const rowEl = document.createElement('div');
+    rowEl.className = 'seat-row';
+    const lblL = document.createElement('div');
+    lblL.className = 'row-label'; lblL.textContent = row.label;
+    rowEl.appendChild(lblL);
+    row.seats.forEach((seat, idx) => {
+      if (!row.isCouple && idx === Math.floor(roomCfg.cols / 2)) {
+        const gap = document.createElement('div'); gap.className = 'seat-gap'; rowEl.appendChild(gap);
+      }
+      const el = document.createElement('div');
+      el.className = 'seat';
+      if (seat.isCouple)                        el.classList.add('couple-seat');
+      else if (seat.isVip)                      el.classList.add(isVipFree() ? 'vip-free' : 'vip-seat');
+      if (seat.booked)                          el.classList.add('booked');
+      else if (selectedSeats.includes(seat.id)) el.classList.add('selected');
+      else                                      el.classList.add('available');
+      el.title = seat.id + (seat.isVip ? (isVipFree() ? ' · VIP (Miễn phụ thu!)' : ' · VIP +50k') : seat.isCouple ? ' · Đôi +80k' : '');
+      if (!seat.booked) el.addEventListener('click', () => toggleSeat(seat));
+      rowEl.appendChild(el);
+    });
+    const lblR = document.createElement('div');
+    lblR.className = 'row-label'; lblR.textContent = row.label;
+    rowEl.appendChild(lblR);
+    grid.appendChild(rowEl);
+  });
+}
+
+function toggleSeat(seat) {
+  const idx = selectedSeats.indexOf(seat.id);
+  if (idx >= 0) { selectedSeats.splice(idx, 1); }
+  else {
+    if (selectedSeats.length >= MAX_SELECT) { showToast(`⚠️ Tối đa ${MAX_SELECT} ghế`); return; }
+    selectedSeats.push(seat.id);
+  }
+  renderGrid();
+  updateSummary();
+}
+
+function getSeatObj(id) {
+  for (const row of seatLayout) { const s = row.seats.find(s => s.id === id); if (s) return s; }
+  return null;
+}
+
+function getSeatPrice(seat) {
+  if (!seat)         return basePrice;
+  if (seat.isCouple) return basePrice + COUPLE_SURCHARGE;
+  if (seat.isVip)    return basePrice + (isVipFree() ? 0 : VIP_SURCHARGE);
+  return basePrice;
+}
+
+// ── FOOD ──────────────────────────────────────────────────────────────────
+function renderFoodGrid() {
+  const freeId = activeDiscount?.config.freeComboId;
+  const items  = FOOD_MENU.filter(f => currentFoodCat === 'all' || f.category === currentFoodCat);
+  document.getElementById('foodGrid').innerHTML = items.map((f, i) => {
+    const qty    = foodOrder[f.id] || 0;
+    const isFree = freeId === f.id;
+    return `<div class="food-card ${qty>0?'has-items':''} ${isFree?'free-gift':''}" id="fc_${f.id}" style="animation-delay:${i*.05}s">
+      <div class="food-img-emoji">${f.emoji}${isFree?'<span class="free-badge-food">Tặng kèm</span>':''}</div>
+      <div class="food-body">
+        <div class="food-name">${f.name}</div>
+        <div class="food-desc">${f.desc}</div>
+        <div class="food-footer">
+          ${isFree ? '<span class="food-price free">🎁 MIỄN PHÍ</span>' : `<span class="food-price">${f.price.toLocaleString('vi-VN')}đ</span>`}
+          <div class="qty-control">
+            <button class="qty-btn" onclick="changeQty('${f.id}',-1)" ${isFree?'disabled':''}>−</button>
+            <span class="qty-num" id="qty_${f.id}">${qty}</span>
+            <button class="qty-btn" onclick="changeQty('${f.id}',+1)" ${isFree?'disabled':''}>+</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterFood(cat, btn) {
+  currentFoodCat = cat;
+  document.querySelectorAll('.cat-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderFoodGrid();
+}
+
+function changeQty(id, delta) {
+  if (id === activeDiscount?.config.freeComboId) return;
+  const next = Math.max(0, (foodOrder[id] || 0) + delta);
+  if (next === 0) delete foodOrder[id]; else foodOrder[id] = next;
+  const el = document.getElementById(`qty_${id}`); if (el) el.textContent = next;
+  const card = document.getElementById(`fc_${id}`); if (card) card.classList.toggle('has-items', next > 0);
+  updateSummary();
+}
+
+// ── DISCOUNT ──────────────────────────────────────────────────────────────
+function isVipFree() { return activeDiscount?.config.vipFree === true; }
+
+function fillCode(code) {
+  document.getElementById('discountInput').value = code;
+  applyDiscountCode();
+}
+
+function applyDiscountCode() {
+  const code   = document.getElementById('discountInput').value.trim().toUpperCase();
+  const config = DISCOUNT_CODES[code];
+  if (!code)   { showFeedback('⚠️ Vui lòng nhập mã', 'error'); return; }
+  if (!config) { activeDiscount = null; document.getElementById('discountBadgeRow').classList.remove('show'); showFeedback('❌ Mã không hợp lệ', 'error'); updateSummary(); return; }
+  activeDiscount = { code, config };
+  if (config.freeCombo && config.freeComboId) { foodOrder[config.freeComboId] = foodOrder[config.freeComboId] || 1; renderFoodGrid(); }
+  renderGrid();
+  document.getElementById('activeBadge').textContent     = code;
+  document.getElementById('activeTypeLabel').textContent = config.label;
+  document.getElementById('discountBadgeRow').classList.add('show');
+  showFeedback('✓ ' + config.description, 'success');
+  updateSummary();
+  showToast('🏷️ Áp dụng mã "' + code + '" thành công!');
+}
+
+function removeDiscountCode() {
+  const old = activeDiscount?.config;
+  activeDiscount = null;
+  if (old?.freeCombo && old.freeComboId) { delete foodOrder[old.freeComboId]; renderFoodGrid(); }
+  document.getElementById('discountInput').value = '';
+  document.getElementById('discountFeedback').className = 'discount-feedback';
+  document.getElementById('discountBadgeRow').classList.remove('show');
+  renderGrid(); updateSummary();
+  showToast('🗑️ Đã xoá mã giảm giá');
+}
+
+function showFeedback(msg, type) {
+  const fb = document.getElementById('discountFeedback');
+  fb.textContent = msg; fb.className = 'discount-feedback ' + type;
+}
+
+function getDiscountAmount(sub) {
+  if (!activeDiscount) return 0;
+  return Math.round(sub * activeDiscount.config.discountPercent / 100);
+}
+
+// ── SUMMARY ───────────────────────────────────────────────────────────────
+function updateSummary() {
+  const listEl = document.getElementById('selectedSeatsList');
+  listEl.innerHTML = selectedSeats.length === 0
+    ? '<span class="no-seats">Chưa chọn ghế nào</span>'
+    : selectedSeats.map(id => `<span class="seat-tag">${id}</span>`).join('');
+
+  const freeId = activeDiscount?.config.freeComboId;
+  const foodEl = document.getElementById('foodSummaryList');
+  const entries = Object.entries(foodOrder);
+  foodEl.innerHTML = entries.length === 0
+    ? '<span class="food-summary-empty">Chưa chọn</span>'
+    : entries.map(([id, qty]) => {
+        const item = FOOD_MENU.find(f => f.id === id); if (!item) return '';
+        const isFree = id === freeId;
+        return `<div class="food-summary-item">
+          <span class="fi-name">${item.emoji} ${item.name} ×${qty}${isFree?' 🎁':''}</span>
+          <span class="fi-price ${isFree?'free':''}">${isFree?'Miễn phí':(item.price*qty).toLocaleString('vi-VN')+'đ'}</span>
+        </div>`;
+      }).join('');
+
+  let seatTotal = 0, stdCnt = 0, vipCnt = 0, cpCnt = 0;
+  selectedSeats.forEach(id => {
+    const s = getSeatObj(id); seatTotal += getSeatPrice(s);
+    if (s?.isCouple) cpCnt++; else if (s?.isVip) vipCnt++; else stdCnt++;
+  });
+  let foodTotal = 0;
+  entries.forEach(([id, qty]) => {
+    if (id === freeId) return;
+    const item = FOOD_MENU.find(f => f.id === id); if (item) foodTotal += item.price * qty;
+  });
+
+  const subtotal       = seatTotal + foodTotal;
+  const discountAmount = getDiscountAmount(subtotal);
+  const total          = subtotal - discountAmount;
+
+  let html = '';
+  if (stdCnt) html += `<div class="price-row"><span class="label">${stdCnt} × Ghế thường</span><span class="val">${(stdCnt*basePrice).toLocaleString('vi-VN')}đ</span></div>`;
+  if (vipCnt) {
+    const up  = basePrice + (isVipFree() ? 0 : VIP_SURCHARGE);
+    const lbl = isVipFree() ? `${vipCnt} × Ghế VIP <small style="color:var(--green)">(miễn phụ thu)</small>` : `${vipCnt} × Ghế VIP`;
+    html += `<div class="price-row"><span class="label">${lbl}</span><span class="val">${(vipCnt*up).toLocaleString('vi-VN')}đ</span></div>`;
+  }
+  if (cpCnt) html += `<div class="price-row"><span class="label">${cpCnt} × Ghế đôi</span><span class="val">${(cpCnt*(basePrice+COUPLE_SURCHARGE)).toLocaleString('vi-VN')}đ</span></div>`;
+  entries.forEach(([id, qty]) => {
+    const item = FOOD_MENU.find(f => f.id === id); if (!item) return;
+    const isFree = id === freeId;
+    html += `<div class="price-row ${isFree?'discount-row':''}">
+      <span class="label">${qty} × ${item.name}${isFree?' 🎁':''}</span>
+      <span class="val">${isFree?'Miễn phí':(item.price*qty).toLocaleString('vi-VN')+'đ'}</span>
+    </div>`;
+  });
+  if (discountAmount > 0) html += `<div class="price-row discount-row">
+    <span class="label">🏷️ ${activeDiscount.code} (−${activeDiscount.config.discountPercent}%)</span>
+    <span class="val">−${discountAmount.toLocaleString('vi-VN')}đ</span>
+  </div>`;
+
+  document.getElementById('priceBreakdown').innerHTML = html || '<div class="price-row"><span class="label">–</span><span class="val">0đ</span></div>';
+
+  const totalStr = total.toLocaleString('vi-VN') + 'đ';
+  document.getElementById('totalAmount').textContent  = totalStr;
+  document.getElementById('mobileTotal').textContent  = totalStr;
+  document.getElementById('mobileCount').textContent  = selectedSeats.length;
+  document.getElementById('seatCountNum').textContent = selectedSeats.length;
+
+  const origEl = document.getElementById('originalPriceDisplay');
+  if (discountAmount > 0 && subtotal > 0) { origEl.textContent = subtotal.toLocaleString('vi-VN') + 'đ'; origEl.style.display = 'inline'; }
+  else origEl.style.display = 'none';
+
+  const has = selectedSeats.length > 0;
+  document.getElementById('btnNext').disabled       = !has;
+  document.getElementById('btnNextMobile').disabled = !has;
+}
+
+// ── MODAL ─────────────────────────────────────────────────────────────────
+function openModal() {
+  // AUTH GUARD: double-check trước khi confirm
+  if (!isLoggedIn()) { openAuthModal(); return; }
+  if (selectedSeats.length === 0) { showToast('⚠️ Vui lòng chọn ít nhất 1 ghế'); return; }
+
+  const freeId = activeDiscount?.config.freeComboId;
+  const seatTotal = selectedSeats.reduce((s, id) => s + getSeatPrice(getSeatObj(id)), 0);
+  const foodTotal = Object.entries(foodOrder).reduce((s, [id, qty]) => {
+    if (id === freeId) return s;
+    const item = FOOD_MENU.find(f => f.id === id); return s + (item ? item.price * qty : 0);
+  }, 0);
+  const subtotal       = seatTotal + foodTotal;
+  const discountAmount = getDiscountAmount(subtotal);
+  const total          = subtotal - discountAmount;
+
+  const foodLines = Object.entries(foodOrder).map(([id, qty]) => {
+    const item = FOOD_MENU.find(f => f.id === id);
+    return item ? `${item.emoji} ${item.name} ×${qty}${id === freeId?' (🎁)':''}` : '';
+  }).filter(Boolean).join(', ') || 'Không có';
+
+  const banner = document.getElementById('modalDiscountBanner');
+  if (activeDiscount && discountAmount > 0) {
+    document.getElementById('modalDiscountText').textContent = `${activeDiscount.config.label}: tiết kiệm ${discountAmount.toLocaleString('vi-VN')}đ`;
+    banner.style.display = 'flex';
+  } else banner.style.display = 'none';
+
+  document.getElementById('modalDetails').innerHTML = `
+    <div class="modal-detail-row"><span class="k">Phim</span><span class="v">${movie.title}</span></div>
+    <div class="modal-detail-row"><span class="k">Suất chiếu</span><span class="v">${showTime}${endTime?' → '+endTime:''} · ${getShowDate()}</span></div>
+    <div class="modal-detail-row"><span class="k">Phòng</span><span class="v">${roomName} (${typeLabel})</span></div>
+    <div class="modal-detail-row"><span class="k">Ghế</span><span class="v">${selectedSeats.join(', ')}</span></div>
+    <div class="modal-detail-row"><span class="k">Đồ ăn</span><span class="v">${foodLines}</span></div>
+    ${discountAmount > 0 ? `<div class="modal-detail-row"><span class="k">Tạm tính</span><span class="v strike">${subtotal.toLocaleString('vi-VN')}đ</span></div>
+    <div class="modal-detail-row"><span class="k">Giảm giá</span><span class="v green">−${discountAmount.toLocaleString('vi-VN')}đ</span></div>` : ''}
+    <div class="modal-detail-row"><span class="k">Tổng tiền</span><span class="v gold">${total.toLocaleString('vi-VN')}đ</span></div>`;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+
+// ── CONFIRM ───────────────────────────────────────────────────────────────
+function confirmBooking() {
+  // AUTH GUARD: final check
+  if (!isLoggedIn()) { closeModal(); openAuthModal(); return; }
+
+  closeModal();
+  selectedSeats.forEach(id => {
+    for (const row of seatLayout) {
+      const s = row.seats.find(s => s.id === id);
+      if (s) s.booked = true;
+    }
+  });
+  saveLayout();
+  syncAvailToMovieDetail();
+
+  const freeId = activeDiscount?.config.freeComboId;
+  const seatTotal = selectedSeats.reduce((s, id) => s + getSeatPrice(getSeatObj(id)), 0);
+  const foodTotal = Object.entries(foodOrder).reduce((s, [id, qty]) => {
+    if (id === freeId) return s;
+    const item = FOOD_MENU.find(f => f.id === id); return s + (item ? item.price * qty : 0);
+  }, 0);
+  const subtotal       = seatTotal + foodTotal;
+  const discountAmount = getDiscountAmount(subtotal);
+  const total          = subtotal - discountAmount;
+
+  const seats    = [...selectedSeats];
+  const foodSnap = Object.entries(foodOrder).map(([id, qty]) => {
+    const item = FOOD_MENU.find(f => f.id === id);
+    return item ? { id, name: item.name, emoji: item.emoji, price: id === freeId ? 0 : item.price, qty } : null;
+  }).filter(Boolean);
+
+  const user = getCurrentUser();
+  const ticket = {
+    id:           'TC' + Date.now().toString(36).toUpperCase(),
+    movieKey, movieTitle: movie.title, movieImage: movie.image,
+    showDate:     getShowDate(), showTime, endTime, roomName, typeLabel,
+    seats, foodItems: foodSnap,
+    discountCode: activeDiscount?.code || null,
+    discountPct:  activeDiscount?.config.discountPercent || 0,
+    discountAmt:  discountAmount, total,
+    bookedBy:     user?.email || user?.username || 'unknown',
+    bookedAt:     new Date().toISOString(),
+  };
+  try {
+    const all = JSON.parse(localStorage.getItem(TICKETS_KEY) || '[]');
+    all.unshift(ticket);
+    localStorage.setItem(TICKETS_KEY, JSON.stringify(all));
+  } catch(e) {}
+
+  selectedSeats = []; foodOrder = {}; activeDiscount = null;
+
+  const foodLines = foodSnap.map(f => `${f.emoji} ${f.name} ×${f.qty}${f.price===0?' (🎁)':''}`).join(', ') || '–';
+  const discNote  = ticket.discountCode ? `<br>Tiết kiệm <strong style="color:var(--green)">${ticket.discountAmt.toLocaleString('vi-VN')}đ</strong> với mã <strong style="color:var(--gold)">${ticket.discountCode}</strong>` : '';
+
+  document.getElementById('successSubText').innerHTML = 'Vé đã được xác nhận. Đến rạp trước 15 phút nhé!' + discNote;
+  document.getElementById('successTicket').innerHTML  = `
+    <div class="ticket-row"><span class="k">🎬 Phim</span><span class="v">${movie.title}</span></div>
+    <div class="ticket-row"><span class="k">📅 Ngày</span><span class="v">${ticket.showDate}</span></div>
+    <div class="ticket-row"><span class="k">🕐 Giờ chiếu</span><span class="v">${showTime}${endTime?' → '+endTime:''}</span></div>
+    <div class="ticket-row"><span class="k">🏠 Phòng</span><span class="v">${roomName} · ${typeLabel}</span></div>
+    <div class="ticket-row"><span class="k">💺 Ghế</span><span class="v">${seats.join(', ')}</span></div>
+    <div class="ticket-row"><span class="k">🍿 Đồ ăn</span><span class="v">${foodLines}</span></div>
+    ${ticket.discountCode ? `<div class="ticket-row"><span class="k">🏷️ Mã giảm</span><span class="v" style="color:var(--green)">${ticket.discountCode} (−${ticket.discountPct}%)</span></div>` : ''}
+    <div class="ticket-row"><span class="k">💰 Tổng tiền</span><span class="v" style="color:var(--gold);font-weight:700">${total.toLocaleString('vi-VN')}đ</span></div>
+    <div class="ticket-row"><span class="k">🎟️ Mã vé</span><span class="v" style="color:var(--gold);font-size:.75rem;letter-spacing:2px">${ticket.id}</span></div>`;
+  document.getElementById('successScreen').classList.add('show');
+  renderGrid(); updateSummary();
+}
+
+function goHome()  { window.location.href = 'index.html'; }
+function goBack(e) { e.preventDefault(); history.length > 1 ? history.back() : (window.location.href = 'index.html'); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+document.getElementById('discountInput').addEventListener('keydown', e => { if (e.key === 'Enter') applyDiscountCode(); });
+document.getElementById('modalOverlay').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+document.getElementById('authOverlay').addEventListener('click', function(e) { if (e.target === this) closeAuthModal(); });
+
+init();
+</script>
+</body>
+</html>
