@@ -73,7 +73,7 @@ src/
 * Đặt vé
 * Voucher giảm giá
 * Thanh toán
-* Giao diện GUI bằng Java Swing
+
 
 ---
 
