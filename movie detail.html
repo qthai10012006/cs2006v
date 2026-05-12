@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chi tiết phim – 3T Cinema</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #07060e; --surface: #110f1e; --surface2: #1a1830;
+      --gold: #f0c040; --gold-dim: #a8862a; --red: #e84545;
+      --green: #2ecc71; --text: #f0edf7; --muted: #7c7a90;
+      --border: rgba(240,192,64,0.15);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; overflow-x: hidden;
+      opacity: 0; transition: opacity .4s ease;
+    }
+    body.loaded { opacity: 1; }
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 20% 0%, rgba(240,192,64,0.07) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 30% at 80% 100%, rgba(232,69,69,0.06) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+    .navbar {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 48px;
+      background: rgba(7,6,14,0.85); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .logo {
+      font-family: 'Bebas Neue', cursive; font-size: 2rem;
+      letter-spacing: 3px; color: var(--gold);
+      display: flex; align-items: center; gap: 10px; text-decoration: none;
+    }
+    .logo span { color: var(--text); opacity: .7; }
+    .btn-back {
+      display: flex; align-items: center; gap: 8px;
+      background: transparent; border: 1px solid var(--border);
+      color: var(--muted); padding: 8px 18px; border-radius: 6px;
+      font-family: 'DM Sans', sans-serif; font-size: .8rem;
+      letter-spacing: 1px; text-transform: uppercase;
+      cursor: pointer; transition: all .25s; text-decoration: none;
+    }
+    .btn-back:hover { border-color: var(--gold); color: var(--gold); }
+    .hero-backdrop {
+      position: relative; width: 100%; height: 420px; overflow: hidden; z-index: 1;
+    }
+    .hero-backdrop-img {
+      width: 100%; height: 100%; object-fit: cover;
+      filter: blur(3px) brightness(0.3); transform: scale(1.05);
+      transition: transform 8s ease;
+    }
+    .hero-backdrop-img.loaded { transform: scale(1.0); }
+    .hero-backdrop-gradient {
+      position: absolute; inset: 0;
+      background: linear-gradient(to bottom, rgba(7,6,14,0.2) 0%, rgba(7,6,14,1) 100%);
+    }
+    .movie-detail-wrap {
+      position: relative; z-index: 2;
+      display: flex; gap: 48px; padding: 0 48px; margin-top: -220px;
+    }
+    .poster-column { flex-shrink: 0; }
+    .poster-img {
+      width: 220px; height: 320px; object-fit: cover;
+      border-radius: 14px; border: 2px solid var(--border);
+      box-shadow: 0 32px 80px rgba(0,0,0,0.7);
+      transition: transform .4s ease;
+    }
+    .poster-img:hover { transform: scale(1.03) rotate(-1deg); }
+    .poster-badges { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: .7rem; font-weight: 600; letter-spacing: 1.5px;
+      text-transform: uppercase; padding: 5px 12px; border-radius: 4px;
+    }
+    .badge-gold { background: var(--gold); color: #000; }
+    .badge-outline { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+    .info-column { flex: 1; padding-top: 120px; }
+    .genre-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+    .genre-tag {
+      font-size: .7rem; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--gold); border: 1px solid rgba(240,192,64,0.3);
+      padding: 4px 12px; border-radius: 20px;
+    }
+    .movie-title {
+      font-family: 'Bebas Neue', cursive;
+      font-size: clamp(2.5rem, 5vw, 4rem); letter-spacing: 4px;
+      line-height: 1; margin-bottom: 16px;
+    }
+    .movie-stats { display: flex; gap: 24px; margin-bottom: 20px; flex-wrap: wrap; }
+    .stat { display: flex; align-items: center; gap: 6px; font-size: .82rem; color: var(--muted); }
+    .stat strong { color: var(--text); }
+    .rating-big {
+      display: flex; align-items: baseline; gap: 4px;
+      font-family: 'Bebas Neue', cursive; margin-bottom: 20px;
+    }
+    .rating-big .score { font-size: 3.5rem; color: var(--gold); letter-spacing: 2px; line-height: 1; }
+    .rating-big .out-of { font-size: 1.4rem; color: var(--muted); }
+    .synopsis { font-size: .88rem; line-height: 1.8; color: var(--muted); max-width: 620px; margin-bottom: 28px; }
+    .cast-label {
+      font-size: .65rem; letter-spacing: 4px; text-transform: uppercase;
+      color: var(--gold); opacity: .7; margin-bottom: 10px;
+    }
+    .cast-list { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+    .cast-chip {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 20px; padding: 5px 14px; font-size: .78rem; color: var(--text);
+      transition: border-color .2s;
+    }
+    .cast-chip:hover { border-color: var(--gold-dim); }
+    .cast-chip.director { background: rgba(240,192,64,0.1); border-color: var(--gold); }
+
+    /* ── TRAILER BUTTON ── */
+    .btn-trailer {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: rgba(232,69,69,0.12); border: 1.5px solid rgba(232,69,69,0.4);
+      color: #ff6b6b; padding: 11px 24px; border-radius: 8px;
+      font-family: 'DM Sans', sans-serif; font-size: .85rem; font-weight: 600;
+      letter-spacing: 1px; text-transform: uppercase; cursor: pointer;
+      transition: all .25s; margin-bottom: 28px;
+      position: relative; overflow: hidden;
+    }
+    .btn-trailer::before {
+      content: ''; position: absolute; inset: 0;
+      background: rgba(232,69,69,0.08);
+      transform: translateX(-100%); transition: transform .3s ease;
+    }
+    .btn-trailer:hover { border-color: #ff6b6b; color: #fff; box-shadow: 0 0 24px rgba(232,69,69,0.25); }
+    .btn-trailer:hover::before { transform: translateX(0); }
+    .btn-trailer .play-icon {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: #e84545; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: transform .2s;
+    }
+    .btn-trailer:hover .play-icon { transform: scale(1.15); }
+    .btn-trailer .play-icon svg { width: 12px; height: 12px; fill: #fff; margin-left: 2px; }
+
+    /* ── TRAILER MODAL ── */
+    .trailer-modal-overlay {
+      position: fixed; inset: 0; z-index: 500;
+      background: rgba(4,3,10,0.92); backdrop-filter: blur(12px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity .3s ease;
+    }
+    .trailer-modal-overlay.open { opacity: 1; pointer-events: all; }
+    .trailer-modal {
+      position: relative; width: 90%; max-width: 900px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 18px; overflow: hidden;
+      transform: scale(0.92) translateY(20px);
+      transition: transform .35s cubic-bezier(0.34,1.56,0.64,1);
+      box-shadow: 0 40px 100px rgba(0,0,0,0.8), 0 0 0 1px rgba(240,192,64,0.1);
+    }
+    .trailer-modal-overlay.open .trailer-modal { transform: scale(1) translateY(0); }
+    .trailer-modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px;
+      background: linear-gradient(to right, rgba(240,192,64,0.08), transparent);
+      border-bottom: 1px solid var(--border);
+    }
+    .trailer-modal-title {
+      font-family: 'Bebas Neue', cursive; font-size: 1.3rem; letter-spacing: 3px; color: var(--gold);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .trailer-modal-title .yt-icon { color: #e84545; font-size: 1.1rem; }
+    .trailer-modal-film { font-size: .75rem; color: var(--muted); margin-top: 2px; letter-spacing: 1px; }
+    .btn-close-modal {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+      color: var(--muted); font-size: 1.1rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .2s; flex-shrink: 0;
+    }
+    .btn-close-modal:hover { background: rgba(232,69,69,0.15); border-color: var(--red); color: #fff; }
+    .trailer-video-wrap {
+      position: relative; width: 100%; padding-bottom: 56.25%;
+      background: #000;
+    }
+    .trailer-video-wrap iframe {
+      position: absolute; inset: 0; width: 100%; height: 100%; border: none;
+    }
+    .no-trailer-msg {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 12px;
+      color: var(--muted); font-size: .9rem;
+    }
+    .no-trailer-msg .yt-big { font-size: 3rem; opacity: .3; }
+
+    /* SHOWTIME */
+    .showtime-section { position: relative; z-index: 2; padding: 48px 48px 120px; }
+    .section-title { font-family: 'Bebas Neue', cursive; font-size: 2rem; letter-spacing: 3px; margin-bottom: 6px; }
+    .section-subtitle { font-size: .8rem; color: var(--muted); margin-bottom: 32px; letter-spacing: 1px; }
+
+    .date-strip { display: flex; gap: 10px; margin-bottom: 36px; overflow-x: auto; padding-bottom: 4px; }
+    .date-strip::-webkit-scrollbar { height: 3px; }
+    .date-strip::-webkit-scrollbar-track { background: var(--surface); }
+    .date-strip::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 2px; }
+    .date-btn {
+      flex-shrink: 0; display: flex; flex-direction: column; align-items: center;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 20px; cursor: pointer;
+      transition: all .25s; min-width: 72px;
+    }
+    .date-btn:hover { border-color: var(--gold-dim); }
+    .date-btn.active { background: var(--gold); border-color: var(--gold); }
+    .date-dow { font-size: .65rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+    .date-btn.active .date-dow { color: rgba(0,0,0,0.6); }
+    .date-num { font-family: 'Bebas Neue', cursive; font-size: 1.6rem; letter-spacing: 1px; line-height: 1; }
+    .date-btn.active .date-num { color: #000; }
+    .date-month { font-size: .65rem; color: var(--muted); margin-top: 2px; }
+    .date-btn.active .date-month { color: rgba(0,0,0,0.5); }
+
+    .rooms-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 20px; }
+    .room-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; overflow: hidden;
+      transition: border-color .25s, box-shadow .25s;
+      animation: fadeUp .5s ease both;
+    }
+    .room-card:hover { border-color: rgba(240,192,64,0.35); box-shadow: 0 12px 40px rgba(240,192,64,0.08); }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+    .room-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px 12px; border-bottom: 1px solid var(--border);
+    }
+    .room-name { font-family: 'Bebas Neue', cursive; font-size: 1.2rem; letter-spacing: 2px; }
+    .room-type {
+      font-size: .65rem; font-weight: 600; letter-spacing: 2px;
+      text-transform: uppercase; padding: 3px 10px; border-radius: 3px;
+    }
+    .room-type.imax     { background: rgba(46,204,113,0.15); color: var(--green); }
+    .room-type.standard { background: rgba(240,192,64,0.1);  color: var(--gold-dim); }
+    .room-type.vip      { background: rgba(232,69,69,0.12);  color: var(--red); }
+    .room-meta { padding: 12px 20px; display: flex; gap: 20px; border-bottom: 1px solid var(--border); }
+    .room-meta-item { font-size: .75rem; color: var(--muted); }
+    .room-meta-item strong { color: var(--text); }
+
+    .slots-list { padding: 14px 20px 18px; display: flex; flex-direction: column; gap: 7px; }
+
+    .slot-row {
+      display: grid;
+      grid-template-columns: 46px 14px 44px 1fr auto;
+      align-items: center; gap: 8px;
+      border-radius: 9px; padding: 9px 12px;
+      transition: all .2s;
+    }
+    .slot-row.mine {
+      background: var(--surface2); border: 1px solid var(--border); cursor: pointer;
+    }
+    .slot-row.mine:hover:not(.soldout) {
+      border-color: var(--gold); background: rgba(240,192,64,0.07);
+    }
+    .slot-row.mine.selected {
+      background: var(--gold); border-color: var(--gold); color: #000;
+    }
+    .slot-row.mine.soldout { opacity: .42; cursor: not-allowed; }
+    .slot-row.other {
+      background: rgba(255,255,255,0.02);
+      border: 1px dashed rgba(124,122,144,0.2);
+      cursor: not-allowed; opacity: .45;
+    }
+
+    .slot-time { font-size: .88rem; font-weight: 600; }
+    .slot-arrow { font-size: .65rem; color: var(--muted); text-align: center; }
+    .slot-row.mine.selected .slot-arrow { color: rgba(0,0,0,0.4); }
+    .slot-end  { font-size: .75rem; color: var(--muted); }
+    .slot-row.mine.selected .slot-end { color: rgba(0,0,0,0.5); }
+    .slot-film {
+      font-size: .72rem; color: var(--muted);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .slot-row.mine .slot-film    { color: var(--text); }
+    .slot-row.mine.selected .slot-film { color: rgba(0,0,0,0.7); }
+    .slot-row.other .slot-film   { font-style: italic; }
+    .slot-badge {
+      font-size: .66rem; font-weight: 600; letter-spacing: .6px;
+      padding: 3px 9px; border-radius: 20px; white-space: nowrap;
+    }
+    .slot-badge.ok   { background: rgba(46,204,113,0.12); color: var(--green); }
+    .slot-badge.few  { background: rgba(232,69,69,0.12);  color: var(--red); }
+    .slot-badge.full { background: rgba(124,122,144,0.12); color: var(--muted); }
+    .slot-badge.busy { background: rgba(124,122,144,0.07); color: var(--muted); }
+    .slot-row.mine.selected .slot-badge { background: rgba(0,0,0,0.15); color: rgba(0,0,0,0.6); }
+
+    .sticky-cta {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+      display: none; align-items: center; justify-content: space-between;
+      padding: 16px 48px;
+      background: rgba(17,15,30,0.97); backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border);
+      animation: slideUp .35s ease;
+    }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .sticky-cta.visible { display: flex; }
+    .cta-info { font-size: .85rem; }
+    .cta-movie { font-family: 'Bebas Neue', cursive; font-size: 1.4rem; letter-spacing: 2px; color: var(--gold); }
+    .cta-details { color: var(--muted); font-size: .78rem; margin-top: 2px; }
+    .btn-book-now {
+      background: var(--gold); color: #000; border: none;
+      padding: 13px 40px; font-family: 'DM Sans', sans-serif;
+      font-size: .85rem; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; border-radius: 8px; cursor: pointer;
+      transition: opacity .2s, transform .15s;
+    }
+    .btn-book-now:hover { opacity: .85; transform: scale(1.02); }
+
+    .toast {
+      position: fixed; bottom: 90px; right: 32px; z-index: 600;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 20px; font-size: .85rem;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+      display: none; align-items: center; gap: 10px; max-width: 300px;
+    }
+    .toast.show { display: flex; animation: toastIn .3s ease; }
+    @keyframes toastIn { from { opacity:0; transform: translateX(20px); } to { opacity:1; transform: translateX(0); } }
+
+    .page-transition {
+      position: fixed; inset: 0; z-index: 999; background: var(--bg);
+      transform: translateX(100%); transition: transform .5s cubic-bezier(.77,0,.18,1);
+      pointer-events: none;
+    }
+
+    @media (max-width: 768px) {
+      .navbar { padding: 14px 20px; }
+      .movie-detail-wrap { flex-direction: column; padding: 0 20px; margin-top: -80px; gap: 24px; }
+      .poster-img { width: 140px; height: 200px; }
+      .info-column { padding-top: 0; }
+      .showtime-section { padding: 32px 20px 120px; }
+      .sticky-cta { padding: 14px 20px; }
+      .rooms-grid { grid-template-columns: 1fr; }
+      .trailer-modal { width: 96%; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page-transition" id="pageTransition"></div>
+<div class="toast" id="toast"></div>
+
+<!-- ── TRAILER MODAL ── -->
+<div class="trailer-modal-overlay" id="trailerOverlay" onclick="handleOverlayClick(event)">
+  <div class="trailer-modal" id="trailerModal">
+    <div class="trailer-modal-header">
+      <div>
+        <div class="trailer-modal-title">
+          <span class="yt-icon">▶</span> TRAILER CHÍNH THUC
+        </div>
+        <div class="trailer-modal-film" id="trailerModalFilm"></div>
+      </div>
+      <button class="btn-close-modal" onclick="closeTrailer()">✕</button>
+    </div>
+    <div class="trailer-video-wrap" id="trailerVideoWrap"></div>
+  </div>
+</div>
+
+<nav class="navbar">
+  <a class="logo" href="index.html" onclick="navigateBack(event)">🎬 3T<span>Cinema</span></a>
+  <a class="btn-back" href="index.html" onclick="navigateBack(event)">← Quay lại</a>
+</nav>
+
+<div class="hero-backdrop">
+  <img id="backdropImg" src="" alt="" class="hero-backdrop-img"/>
+  <div class="hero-backdrop-gradient"></div>
+</div>
+
+<div class="movie-detail-wrap">
+  <div class="poster-column">
+    <img id="posterImg" src="" alt="" class="poster-img"/>
+    <div class="poster-badges">
+      <span class="badge badge-gold" id="hotBadge" style="display:none">🔥 Hot</span>
+      <span class="badge badge-outline" id="newBadge" style="display:none">✨ Mới</span>
+    </div>
+  </div>
+  <div class="info-column">
+    <div class="genre-tags" id="genreTags"></div>
+    <h1 class="movie-title" id="movieTitle">–</h1>
+    <div class="movie-stats" id="movieStats"></div>
+    <div class="rating-big">
+      <span class="score" id="movieScore">–</span>
+      <span class="out-of">/ 10</span>
+    </div>
+    <p class="synopsis" id="synopsis"></p>
+
+    <!-- TRAILER BUTTON -->
+    <button class="btn-trailer" id="btnTrailer" onclick="openTrailer()">
+      <span class="play-icon">
+        <svg viewBox="0 0 10 12"><polygon points="0,0 10,6 0,12"/></svg>
+      </span>
+      Xem Trailer
+    </button>
+
+    <div>
+      <div class="cast-label">Đạo diễn</div>
+      <div class="cast-list" id="directorList"></div>
+      <div class="cast-label">Diễn viên chính</div>
+      <div class="cast-list" id="castList"></div>
+    </div>
+  </div>
+</div>
+
+<section class="showtime-section">
+  <div class="section-title">Lịch Chiếu</div>
+  <div class="section-subtitle">Suất tô sáng là suất chiếu phim này · Suất mờ là phòng đang bận phim khác</div>
+  <div class="date-strip" id="dateStrip"></div>
+  <div class="rooms-grid" id="roomsGrid"></div>
+</section>
+
+<div class="sticky-cta" id="stickyCta">
+  <div class="cta-info">
+    <div class="cta-movie" id="ctaMovie">–</div>
+    <div class="cta-details" id="ctaDetails">Chưa chọn suất chiếu</div>
+  </div>
+  <button class="btn-book-now" onclick="proceedToBooking()">Chọn ghế ngồi →</button>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────
+const MOVIES = {
+  'Hen Em Ngay Nhat Thuc': {
+    title: 'Hen Em Ngay Nhat Thuc', genres: ['Romance','Family'],
+    duration: 148, score: 8.4, rated: 'T-16', year: 2026, badge: 'hot',
+    trailerYtId: '8fRszUyt_YQ', // Trailer chính thức
+    image: 'https://iguov8nhvyobj.vcdn.cloud/media/catalog/product/cache/1/image/1800x/71252117777b696995f01934522c402d/1/0/1080wx608h-nhatthuc.jpg',
+    synopsis: 'Năm 1995, khi đang đứng trước một quyết định quan trọng của cuộc đời, Ân bất ngờ bị kéo trở lại quá khứ bởi những bức thư tình chưa từng trao tay. Hành trình tìm gặp Thiên - mối tình đầu từng khắc sâu trong tim - đưa cô về lại thôn xóm Trà Mây năm xưa.',
+    director: ['Lê Thiện Viễn'],
+    cast: ['Đoàn Thiên Ân','Khương Lê','NSND Lê Khanh','Huỳnh Phương','Nguyên Thảo','NSND Kim Xuân','Thanh Sơn','Hứa Vĩ Văn'],
+  },
+  'Anh Hung': {
+    title: 'Anh Hung', genres: ['Family'],
+    duration: 130, score: 7.9, rated: 'T-13', year: 2026, badge: null,
+    trailerYtId: '9fgmlmYme18', // Trailer chính thức
+    image: 'https://image.ngaynay.vn/w760/Uploaded/2026/vowkoqic/2026_04_21/z7749926617316-9d9386f718b254749429b96bf2f44d37-1138-5608.jpg',
+    synopsis: 'Câu chuyện phim theo chân Hùng (Thái Hòa) - người cha đơn thân kiêm tài xế taxi và đồng nghiệp hãng xe là Tuấn (Võ Tấn Phát) bị cuốn vào một phi vụ lừa đảo từ thiện tiền tỉ trong khi sinh mạng cô con gái nhỏ của anh đang nằm gọn trong tay tử thần.',
+    director: ['Võ Thạch Thảo'], cast: ['Thái Hoà', 'Võ Tấn Phát', 'Đoàn Thế Vinh', 'Phương Thanh', 'Hồng Ánh', 'NSƯT Lê Thiện', 'Hoàng Minh Triết', 'Gia Tuệ'],
+  },
+  'THAM MY VIEN AM PHU': {
+    title: 'THAM MY VIEN AM PHU', genres: ['Horror'],
+    duration: 169, score: 9.1, rated: 'T-16', year: 2026, badge: 'new',
+    trailerYtId: 'R5VRbeWl0qM', // Trailer chính thức
+    image: 'https://kenh14cdn.com/203336854389633024/2026/5/6/photo-1-17780636405391605466439-1778076295775-1778076296228773360142.jpg',
+    synopsis: 'Khi cái đẹp trở thành nỗi ám ảnh. Để cứu người yêu đang hôn mê, Thanh chấp nhận làm việc tại một thẩm mỹ viện hẻo lánh. Nhưng nơi đây nhanh chóng biến thành cơn ác mộng với những nghi lễ ma quái, những hồn ma vất vưởng và một bí mật kinh hoàng phía sau vẻ hào nhoáng.',
+    director: ['NGUYỄN HỮU HOÀNG'], cast: ['Ngọc Trinh'],
+  },
+  'Heo Nam Mong': {
+    title: 'Heo Nam Mong', genres: ['Horror'],
+    duration: 155, score: 8.0, rated: 'T-18', year: 2026, badge: null,
+    trailerYtId: 'GG6Zrjn0UpE', // Trailer chính thức
+    image: 'https://cdn.moveek.com/storage/media/cache/tall/69a14979d4555683148961.jpg',
+    synopsis: '"Heo Năm Móng" được lấy cảm hứng từ một trong những truyền thuyết linh dị huyền bí của cộng đồng người Khmer ở khu vực miền Tây để bật lên thông điệp về nghiệp - quả, về những hệ luỵ khôn lường khi sử dụng niềm tin tín ngưỡng sai chỗ.',
+    director: ['Lưu Thành Luân'], cast: ['Võ Tấn Phát', 'Trần Ngọc Vàng', 'NSƯT Ốc Thanh Vân', 'Nghệ Sĩ Thanh Thủy'],
+  },
+  'Phim Đien Anh Doraemon: Nobita va Lau Dai Duoi Day Bien': {
+    title: 'Phim Đien Anh Doraemon: Nobita va Lau Dai Duoi Day Bien', genres: ['Animation'],
+    duration: 101, score: 8.7, rated: 'P', year: 2026, badge: 'Sắp chiếu',
+    trailerYtId: 'GJfW_q6KUQc', // Trailer chính thức
+    image: 'https://tse3.mm.bing.net/th/id/OIP.xbcgiFZPv76TGzHaUJwOyAHaKe?pid=Api&h=220&P=0',
+    synopsis: 'Bước vào kì nghỉ hè, Nobita và các bạn tranh cãi chí chóe về địa điểm cắm trại. Theo đề xuất của Doraemon, cả nhóm quyết định cắm trại giữa lòng đại dương! Sử dụng bảo bối thần kì, 5 bạn nhỏ tận hưởng chuyến cắm trại dưới đáy biển, gặp gỡ vô vàn sinh vật lí thú trên đường đi.',
+    director: ['Tetsuo Yajima'], cast: ['Wasabi Mizuta', 'Megumi Oohara', 'Yumi Kakazu', 'Subaru Kimura', 'Tomokazu Seki'],
+  },
+  'Tam Biet GOHAN': {
+    title: 'Tam Biet GOHAN', genres: ['Family'],
+    duration: 140, score: 7.5, rated: 'K', year: 2026, badge: 'Sắp chiếu',
+    trailerYtId: 'PaGtIdi8ONk', // Trailer chính thức
+    image: 'https://thegioidienanh.vn/stores/news_dataimages/2026/052026/07/10/main-poster20260507103838.jpg?rt=20260507104227',
+    synopsis: 'Suốt mười năm đằng đẵng, chú chó hoang lông trắng với chiếc mũi đỏ mang tên "Gohan" cứ thế phiêu dạt giữa cuộc đời, ôm trọn những ký ức chẳng thể phai nhòa.',
+    director: ['Chayanop Boonprakob - Baz Poonpiriya - Atta Hemwadee'], cast: ['Yasushi Kitajima', 'Poe Mamhe Thar', 'Jinjett Wattanasin', 'Tontawan Tantivejakul'],
+  },
+  'MA DA HAN QUOC: HO NUOT NGUOI': {
+    title: 'MA DA HAN QUOC: HO NUOT NGUOI', genres: ['Horror'],
+    duration: 95, score: 8.2, rated: 'T-18', year: 2026, badge: 'Sắp chiếu',
+    trailerYtId: 'T1fnpd8Icv8', // Trailer chính thức
+    image: 'https://kenh14cdn.com/203336854389633024/2026/5/10/1-copy-copy-22-1778414718449-17784147198461867946665.jpg',
+    synopsis: 'Bên dưới vẻ tĩnh lặng của hồ Salmokji là nơi trú ngụ của một thực thể tà ma. Bị thu hút bởi những vụ án tại hồ Salmokji, một nhóm phóng viên dấn thân vào cuộc điều tra đưa tin.',
+    director: ['Lee Sang-min'], cast: ['Kim Hye-yoon', 'Lee Jong-won', 'Kim Jun-han', 'Kim Young-sung', 'Oh Dong-min', 'Yoon Jae-chan', 'and Jang Da-ah'],
+  },
+};
+
+const FILM_ROTATION = ['Hen Em Ngay Nhat Thuc','Anh Hung','THAM MY VIEN AM PHU','Heo Nam Mong'];
+
+const ROOMS = [
+  { id:1, name:'Phòng 1', type:'imax',     typeLabel:'IMAX',     price:150000, startMin: 8*60+30 },
+  { id:2, name:'Phòng 2', type:'vip',      typeLabel:'VIP',      price:220000, startMin: 9*60+0  },
+  { id:3, name:'Phòng 3', type:'standard', typeLabel:'Standard', price:90000,  startMin: 8*60+0  },
+];
+
+const ROOM_CONFIGS = {
+  1: { cols: 20, vipRows: [6,7], coupleRow: 9  },
+  2: { cols: 14, vipRows: [4,5], coupleRow: 7  },
+  3: { cols: 15, vipRows: [],    coupleRow: 8  },
+};
+
+const ROOM_ROWS = { 1: 10, 2: 10, 3: 10 };
+
+function calcCapacity(roomId) {
+  const cfg  = ROOM_CONFIGS[roomId];
+  const rows = ROOM_ROWS[roomId];
+  let total  = 0;
+  for (let r = 0; r < rows; r++) {
+    if (r === cfg.coupleRow) {
+      total += Math.floor(cfg.cols / 2);
+    } else {
+      total += cfg.cols;
+    }
+  }
+  return total;
+}
+
+const CLEANUP = 25;
+const CUTOFF  = 23*60;
+
+function availKey(roomId, dayOffset, startMin) {
+  return `tc_avail_r${roomId}_d${dayOffset}_${startMin}`;
+}
+function layoutKey(roomId, dayOffset, startMin) {
+  return `tc_layout_r${roomId}_d${dayOffset}_${startMin}`;
+}
+
+function getActualAvailable(roomId, dayOffset, startMin) {
+  try {
+    const layoutData = localStorage.getItem(layoutKey(roomId, dayOffset, startMin));
+    if (layoutData) {
+      const layout = JSON.parse(layoutData);
+      let available = 0;
+      for (const row of layout) {
+        for (const seat of row.seats) {
+          if (!seat.booked) available++;
+        }
+      }
+      return available;
+    }
+  } catch(e) {}
+  try {
+    const v = localStorage.getItem(availKey(roomId, dayOffset, startMin));
+    if (v !== null) return parseInt(v, 10);
+  } catch(e) {}
+  return null;
+}
+
+function initAvailIfNeeded(roomId, dayOffset, startMin, defaultVal) {
+  const aKey = availKey(roomId, dayOffset, startMin);
+  const lKey = layoutKey(roomId, dayOffset, startMin);
+  try {
+    if (localStorage.getItem(lKey) !== null) return;
+    if (localStorage.getItem(aKey) !== null) return;
+    localStorage.setItem(aKey, String(defaultVal));
+  } catch(e) {}
+}
+
+const toTime = m => `${String(Math.floor(m/60)%24).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+
+function mkRng(seed) {
+  let s = seed + 0x6D2B79F5;
+  return () => {
+    s = Math.imul(s ^ s>>>15, s|1);
+    s ^= s + Math.imul(s ^ s>>>7, s|61);
+    return ((s ^ s>>>14)>>>0) / 4294967296;
+  };
+}
+
+function buildTimeline(room, dayOffset) {
+  const capacity = calcCapacity(room.id);
+  const rng      = mkRng(room.id * 1000 + dayOffset);
+  const slots    = [];
+  let cursor     = room.startMin;
+  let fi         = (dayOffset + room.id) % FILM_ROTATION.length;
+
+  while (cursor <= CUTOFF) {
+    const filmKey = FILM_ROTATION[fi % FILM_ROTATION.length];
+    const dur     = MOVIES[filmKey].duration;
+    const endMin  = cursor + dur;
+    const roll    = rng();
+    let defaultAvailable;
+    if      (roll < 0.12) defaultAvailable = 0;
+    else if (roll < 0.28) defaultAvailable = Math.floor(rng() * 12) + 1;
+    else                  defaultAvailable = Math.floor(rng() * (capacity - 20)) + 20;
+    defaultAvailable = Math.min(defaultAvailable, capacity);
+    initAvailIfNeeded(room.id, dayOffset, cursor, defaultAvailable);
+    const actual    = getActualAvailable(room.id, dayOffset, cursor);
+    const available = (actual !== null) ? actual : defaultAvailable;
+    slots.push({ filmKey, startMin: cursor, endMin, available, capacity });
+    cursor = endMin + CLEANUP;
+    fi++;
+  }
+  return slots;
+}
+
+// ── STATE ─────────────────────────────────────────────────────────────────
+const params   = new URLSearchParams(location.search);
+const movieKey = params.get('movie') || 'Hen Em Ngay Nhat Thuc';
+const movie    = MOVIES[movieKey] || MOVIES['Hen Em Ngay Nhat Thuc'];
+
+let selectedDate = 0;
+let selectedSlot = null;
+
+// ── TRAILER ───────────────────────────────────────────────────────────────
+function openTrailer() {
+  const overlay = document.getElementById('trailerOverlay');
+  const wrap    = document.getElementById('trailerVideoWrap');
+  const filmEl  = document.getElementById('trailerModalFilm');
+
+  filmEl.textContent = movie.title;
+
+  if (movie.trailerYtId) {
+    wrap.innerHTML = `<iframe
+      src="https://www.youtube.com/embed/${movie.trailerYtId}?autoplay=1&rel=0&modestbranding=1"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowfullscreen>
+    </iframe>`;
+  } else {
+    wrap.innerHTML = `
+      <div class="no-trailer-msg">
+        <div class="yt-big">▶</div>
+        <div>Trailer chưa được cập nhật</div>
+      </div>`;
+  }
+
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeTrailer() {
+  const overlay = document.getElementById('trailerOverlay');
+  const wrap    = document.getElementById('trailerVideoWrap');
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+  // Stop video by clearing iframe src
+  setTimeout(() => { wrap.innerHTML = ''; }, 300);
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('trailerOverlay')) closeTrailer();
+}
+
+// ESC key closes modal
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeTrailer();
+});
+
+// ── PAGE TRANSITION ───────────────────────────────────────────────────────
+function navigateBack(e) {
+  e.preventDefault();
+  const t = document.getElementById('pageTransition');
+  t.style.cssText = 'transform:translateX(100%);transition:none';
+  requestAnimationFrame(() => {
+    t.style.cssText = 'transform:translateX(0);transition:transform .45s cubic-bezier(.77,0,.18,1)';
+  });
+  setTimeout(() => { window.location.href = 'index.html'; }, 430);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+function init() {
+  const bi = document.getElementById('backdropImg');
+  bi.src = movie.image; bi.onload = () => bi.classList.add('loaded');
+  const pi = document.getElementById('posterImg');
+  pi.src = movie.image; pi.alt = movie.title;
+  document.title = movie.title + ' – 3T Cinema';
+
+  if (movie.badge === 'hot') document.getElementById('hotBadge').style.display = 'inline-flex';
+  if (movie.badge === 'new') document.getElementById('newBadge').style.display = 'inline-flex';
+
+  document.getElementById('movieTitle').textContent = movie.title;
+  document.getElementById('movieScore').textContent = movie.score;
+  document.getElementById('synopsis').textContent   = movie.synopsis;
+
+  // Ẩn nút trailer nếu phim không có trailer
+  if (!movie.trailerYtId) {
+    document.getElementById('btnTrailer').style.display = 'none';
+  }
+
+  const gt = document.getElementById('genreTags');
+  movie.genres.forEach(g => {
+    const s = document.createElement('span'); s.className='genre-tag'; s.textContent=g; gt.appendChild(s);
+  });
+  document.getElementById('movieStats').innerHTML = `
+    <div class="stat">⏱&nbsp;<strong>${movie.duration} phút</strong></div>
+    <div class="stat">🎭&nbsp;<strong>${movie.rated}</strong></div>
+    <div class="stat">📅&nbsp;<strong>${movie.year}</strong></div>`;
+
+  document.getElementById('castList').append(
+    ...movie.cast.map(n => { const c=document.createElement('div'); c.className='cast-chip'; c.textContent=n; return c; })
+  );
+  const dl = document.getElementById('directorList');
+  if (movie.director?.length) {
+    dl.append(...movie.director.map(n => { const d=document.createElement('div'); d.className='cast-chip director'; d.textContent=n; return d; }));
+  } else {
+    dl.previousElementSibling.style.display = 'none';
+  }
+
+  buildDateStrip();
+  buildRooms();
+  requestAnimationFrame(() => document.body.classList.add('loaded'));
+}
+
+// ── DATE STRIP ────────────────────────────────────────────────────────────
+function buildDateStrip() {
+  const strip  = document.getElementById('dateStrip');
+  strip.innerHTML = '';
+  const days   = ['CN','T2','T3','T4','T5','T6','T7'];
+  const months = ['Th1','Th2','Th3','Th4','Th5','Th6','Th7','Th8','Th9','Th10','Th11','Th12'];
+  const today  = new Date();
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(today); d.setDate(today.getDate() + i);
+    const btn = document.createElement('div');
+    btn.className = 'date-btn' + (i===selectedDate?' active':'');
+    btn.innerHTML = `
+      <span class="date-dow">${i===0?'Hôm nay':days[d.getDay()]}</span>
+      <span class="date-num">${d.getDate()}</span>
+      <span class="date-month">${months[d.getMonth()]}</span>`;
+    btn.addEventListener('click', () => {
+      selectedDate=i; selectedSlot=null;
+      document.getElementById('stickyCta').classList.remove('visible');
+      buildDateStrip(); buildRooms();
+    });
+    strip.appendChild(btn);
+  }
+}
+
+// ── ROOMS ─────────────────────────────────────────────────────────────────
+function buildRooms() {
+  const grid = document.getElementById('roomsGrid');
+  grid.innerHTML = '';
+
+  ROOMS.forEach((room, ri) => {
+    const capacity = calcCapacity(room.id);
+    const timeline = buildTimeline(room, selectedDate);
+    const card     = document.createElement('div');
+    card.className = 'room-card';
+    card.style.animationDelay = `${ri*0.08}s`;
+    card.innerHTML = `
+      <div class="room-header">
+        <span class="room-name">${room.name}</span>
+        <span class="room-type ${room.type}">${room.typeLabel}</span>
+      </div>
+      <div class="room-meta">
+        <div class="room-meta-item">🪑 <strong>${capacity}</strong> ghế</div>
+        <div class="room-meta-item">💰 <strong>${room.price.toLocaleString('vi-VN')}đ</strong> / ghế</div>
+      </div>
+      <div class="slots-list" id="slots-${room.id}"></div>`;
+    grid.appendChild(card);
+
+    const list = card.querySelector(`#slots-${room.id}`);
+
+    timeline.forEach(slot => {
+      const isMine     = slot.filmKey === movieKey;
+      const isSoldOut  = slot.available === 0;
+      const isFew      = !isSoldOut && slot.available <= 15;
+      const isSelected = selectedSlot?.roomId===room.id && selectedSlot?.startMin===slot.startMin;
+
+      const row = document.createElement('div');
+      row.className = 'slot-row ' + (isMine ? 'mine' + (isSoldOut?' soldout':'') + (isSelected?' selected':'') : 'other');
+
+      let badgeHtml;
+      if (!isMine)        badgeHtml = `<span class="slot-badge busy">Phim khác</span>`;
+      else if (isSoldOut) badgeHtml = `<span class="slot-badge full">Hết vé</span>`;
+      else if (isFew)     badgeHtml = `<span class="slot-badge few">Còn ${slot.available}</span>`;
+      else                badgeHtml = `<span class="slot-badge ok">${slot.available} ghế</span>`;
+
+      row.innerHTML = `
+        <span class="slot-time">${toTime(slot.startMin)}</span>
+        <span class="slot-arrow">→</span>
+        <span class="slot-end">${toTime(slot.endMin)}</span>
+        <span class="slot-film">${MOVIES[slot.filmKey].title}</span>
+        ${badgeHtml}`;
+
+      if (isMine && !isSoldOut) {
+        row.addEventListener('click', () => {
+          selectedSlot = {
+            roomId: room.id, roomName: room.name, filmKey: slot.filmKey,
+            price: room.price, typeLabel: room.typeLabel,
+            startMin: slot.startMin, endMin: slot.endMin, available: slot.available,
+          };
+          updateCta(); buildRooms();
+        });
+      }
+      list.appendChild(row);
+    });
+  });
+}
+
+// ── CTA ───────────────────────────────────────────────────────────────────
+function updateCta() {
+  if (!selectedSlot) return;
+  document.getElementById('ctaMovie').textContent  = MOVIES[selectedSlot.filmKey].title;
+  document.getElementById('ctaDetails').textContent =
+    `${selectedSlot.roomName} (${selectedSlot.typeLabel})  ·  ` +
+    `${toTime(selectedSlot.startMin)} → ${toTime(selectedSlot.endMin)}  ·  ` +
+    `${selectedSlot.price.toLocaleString('vi-VN')}đ / ghế`;
+  document.getElementById('stickyCta').classList.add('visible');
+}
+
+function proceedToBooking() {
+  if (!selectedSlot) { showToast('⚠️ Vui lòng chọn suất chiếu!'); return; }
+  const freshAvailable = getActualAvailable(selectedSlot.roomId, selectedDate, selectedSlot.startMin) ?? selectedSlot.available;
+  const p = new URLSearchParams({
+    movie: selectedSlot.filmKey, title: MOVIES[selectedSlot.filmKey].title,
+    room: selectedSlot.roomId, roomName: selectedSlot.roomName,
+    time: toTime(selectedSlot.startMin), endTime: toTime(selectedSlot.endMin),
+    price: selectedSlot.price, type: selectedSlot.typeLabel,
+    date: selectedDate, available: freshAvailable, startMin: selectedSlot.startMin,
+    poster: MOVIES[selectedSlot.filmKey].image,
+  });
+  const t = document.getElementById('pageTransition');
+  t.style.cssText = 'transform:translateX(100%);transition:none';
+  requestAnimationFrame(() => {
+    t.style.cssText = 'transform:translateX(0);transition:transform .45s cubic-bezier(.77,0,.18,1)';
+  });
+  setTimeout(() => { window.location.href = `seat booking.html?${p.toString()}`; }, 430);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+init();
+</script>
+</body>
+</html>
