@@ -1,0 +1,19 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package rapphim;
+
+/**
+ *
+ * @author DELL
+ */
+public class GheVip extends Ghe {
+    public GheVip(String ma, int h, int c) {
+        super(ma, h, c);
+    }
+
+    public double tinhGia() {
+        return 120000;
+    }
+}
